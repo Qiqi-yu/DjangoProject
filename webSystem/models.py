@@ -4,6 +4,27 @@ from enum import Enum
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 
+# 判断用户从is_student到is_provider的状态转换
+class ExamStatus(Enum):
+    # 未提交申请
+    NORMAL=1
+    # 提交审核中
+    EXAMING=2
+    # 被拒绝
+    REJECT=3
+
+class SystemUser(AbstractUser):
+    # 对User属性的判断
+    is_student = models.BooleanField(default=False)
+    is_provider = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
+    examining = models.BooleanField(default=False)
+    # 暂时加入对登录状态的判断
+    logged = models.BooleanField(default=False)
+    # 用户提交审核申请的状态判断
+    examining_status=models.SmallIntegerField(default=ExamStatus.NORMAL)
+    # TODO:权限在接口处通过对User属性判断即可
+
 
 class EquipmentStatus(Enum):
     # 已添加
@@ -18,15 +39,12 @@ class EquipmentStatus(Enum):
     ON_LOAN = 5
 
 
-class SystemUser(AbstractUser):
-    # 对User属性的判断
-    is_student = models.BooleanField(default=False)
-    is_provider = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    # 暂时加入对登录状态的判断
-    logged = models.BooleanField(default=False)
-
-    # 权限在接口处通过对User属性判断即可
+class Equipment(models.Model):
+    status = models.PositiveSmallIntegerField(default=EquipmentStatus.EXIST)
+    name = models.CharField(max_length=100)
+    owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
+    borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
+    loan_end_time = models.DateTimeField(default=timezone.now)
 
 
 class ApplicationStatus(Enum):
@@ -38,15 +56,6 @@ class ApplicationStatus(Enum):
     NOT_PASS=3
     # 租期结束
     RENT_END=4
-
-
-class Equipment(models.Model):
-    status = models.PositiveSmallIntegerField(default=EquipmentStatus.EXIST)
-    name = models.CharField(max_length=100)
-    owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
-    borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
-    loan_end_time = models.DateTimeField(default=timezone.now)
-
 
 class LoanApplication(models.Model):
     status = models.PositiveSmallIntegerField(default=ApplicationStatus.SENTED)

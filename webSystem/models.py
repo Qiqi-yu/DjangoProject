@@ -36,42 +36,35 @@ class SystemUser(AbstractUser):
     # TODO:权限在接口处通过对User属性判断即可
 
 
-class EquipmentStatus(Enum):
-    # 已添加
-    EXIST = 1
-    # 等待批准上架
-    WAIT_ON_SHELF = 2
-    # 已上架
-    ON_SHELF = 3
-    # 等待批准借出
-    WAIT_ON_LOAN = 4
-    # 已借出
-    ON_LOAN = 5
 
 
 class Equipment(models.Model):
-    status = models.PositiveSmallIntegerField(default=EquipmentStatus.EXIST)
+    EquipmentStatus = (
+        (1, 'exist'), # 已添加
+        (2, 'wait_on_shelf'), # 等待批准上架
+        (3, 'on_shelf'), # 已上架
+        (4, 'wait_on_loan'), # 等待批准借出
+        (5, 'on_loan'), # 已借出
+    )
+    status = models.PositiveSmallIntegerField(choices=EquipmentStatus, default=1)
     name = models.CharField(max_length=100)
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
     borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
     loan_end_time = models.DateTimeField(default=timezone.now)
 
 
-class ApplicationStatus(Enum):
-    # 发出待审核
-    SENTED = 1
-    # 正在进行
-    ON_PROCESS = 2
-    # 未通过审核
-    NOT_PASS = 3
-    # 租期结束
-    RENT_END = 4
-
-
 class LoanApplication(models.Model):
-    status = models.PositiveSmallIntegerField(default=ApplicationStatus.SENTED)
+    ApplicationStatus = (
+        (1, 'sented'), # 发出待审核
+        (2, 'on_process'), # 正在进行
+        (3, 'not_pass'), # 未通过审核
+        (4, 'rent_end'), # 租期结束
+    )
+    status = models.PositiveSmallIntegerField(choices=ApplicationStatus, default=1)
     loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)
     loan_start_time = models.DateTimeField(default=timezone.now)
     loan_end_time = models.DateTimeField(default=timezone.now)
+
+

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from .models import SystemUser
+from .models import SystemUser, Equipment
 from django.http import HttpResponse
 import json
 # Create your views here.
@@ -89,5 +89,23 @@ def logout_request(request):
             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
+
+
+# 查询上架的设备信息
+# TODO 接口测试
+def equipment_search(request):
+    if request.method == 'GET':
+        if 'username' in request.session:
+            on_shelf_equipments = Equipment.objects.filter(status=3)
+            equipments = []
+            for equipment in on_shelf_equipments:
+                equipment_info = {'name': equipment.name, 'description': equipment.description,
+                                  'owner': equipment.owner.name, 'contact': equipment.owner.tel}
+                equipments.append(equipment_info)
+            return HttpResponse(status=200, content=json.dumps({'on_shelf_equipments': equipments}))
+        else:
+            return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
 
 

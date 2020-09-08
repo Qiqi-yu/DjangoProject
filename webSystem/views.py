@@ -6,7 +6,7 @@ from django.http import HttpResponse
 import json
 # Create your views here.
 
-
+# 注册接口
 def logon_request(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -19,6 +19,8 @@ def logon_request(request):
             return HttpResponse(status=400, content='user exists')
         else:
             user = SystemUser()
+            # 先将用户类型设置为普通用户
+            user.is_student=True
             user.username = username
             user.set_password(password)
             user.save()

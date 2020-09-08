@@ -40,15 +40,15 @@ class ApplicationStatus(Enum):
 class Equipment(models.Model):
     status = models.PositiveSmallIntegerField(default=EquipmentStatus.EXIST)
     name = models.CharField(max_length=100)
-    owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE)
-    borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='')
+    owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
+    borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
     loan_end_time = models.DateTimeField(default=timezone.now)
 
 
 class LoanApplication(models.Model):
     status = models.PositiveSmallIntegerField(default=ApplicationStatus.SENTED)
-    loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE)
-    applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE)
+    loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
+    applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)
     loan_start_time = models.DateTimeField(default=timezone.now)
     loan_end_time = models.DateTimeField(default=timezone.now)

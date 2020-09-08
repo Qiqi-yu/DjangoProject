@@ -6,16 +6,13 @@ from django.contrib.auth.models import AbstractUser
 
 
 # 判断用户从is_student到is_provider的状态转换
-class ExamStatus(Enum):
-    # 未提交申请
-    NORMAL = 1
-    # 提交审核中
-    EXAMING = 2
-    # 被拒绝
-    REJECT = 3
-
 
 class SystemUser(AbstractUser):
+    ExamStatus=(
+        (1,'Normal'),
+        (2,'EXAMING'),
+        (3,'REJECT')
+    )
     # 对User属性的判断
     is_student = models.BooleanField(default=False)
     is_provider = models.BooleanField(default=False)
@@ -24,7 +21,7 @@ class SystemUser(AbstractUser):
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断
-    examining_status = models.PositiveSmallIntegerField(default=ExamStatus.NORMAL)
+    examining_status = models.PositiveSmallIntegerField(choices=ExamStatus,default=1)
 
     # 当用户提交审核申请时候 需要的信息
     # 实验室信息

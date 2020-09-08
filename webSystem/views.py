@@ -8,29 +8,6 @@ import json
 
 # 注册接口
 def logon_request(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
-
-        if username == '' or password == '' or email == '':
-            return HttpResponse(status=400, content='invalid parameters')
-        elif SystemUser.objects.filter(username=username).exists():
-            return HttpResponse(status=400, content='user exists')
-        else:
-            user = SystemUser()
-            # 先将用户类型设置为普通用户
-            user.is_student=True
-            user.username = username
-            user.set_password(password)
-            user.save()
-            return HttpResponse(status=200)
-    else:
-        return HttpResponse(status=400, content='require POST')
-
-
-# 注册接口
-def logon_request(request):
     # 检验方法
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -95,6 +72,7 @@ def login_request(request):
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
 
+
 # 登出
 def logout_request(request):
     if request.method == 'POST':
@@ -111,3 +89,5 @@ def logout_request(request):
             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
+
+

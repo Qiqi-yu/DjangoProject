@@ -1,7 +1,6 @@
 from django.shortcuts import render
 
 from .models import SystemUser
-from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
 # Create your views here.
@@ -67,4 +66,19 @@ def login_request(request):
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
 
-
+# 登出
+def logout_request(request):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 更新登录状态
+            user.logged = False
+            user.save()
+            del request.session['username']
+            return HttpResponse(status=200,content=json.dumps({'user': user_name}))
+        else:
+            return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))

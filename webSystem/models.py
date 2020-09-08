@@ -23,6 +23,9 @@ class SystemUser(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_provider = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    # 暂时加入对登录状态的判断
+    logged = models.BooleanField(default=False)
+
     # 权限在接口处通过对User属性判断即可
 
 

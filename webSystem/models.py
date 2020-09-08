@@ -4,14 +4,16 @@ from enum import Enum
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 
+
 # 判断用户从is_student到is_provider的状态转换
 class ExamStatus(Enum):
     # 未提交申请
-    NORMAL=1
+    NORMAL = 1
     # 提交审核中
-    EXAMING=2
+    EXAMING = 2
     # 被拒绝
-    REJECT=3
+    REJECT = 3
+
 
 class SystemUser(AbstractUser):
     # 对User属性的判断
@@ -22,7 +24,18 @@ class SystemUser(AbstractUser):
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断
-    examining_status=models.SmallIntegerField(default=ExamStatus.NORMAL)
+    examining_status = models.PositiveSmallIntegerField(default=ExamStatus.NORMAL)
+
+    # 当用户提交审核申请时候 需要的信息
+    # 实验室信息
+    info_lab = models.CharField(max_length=50, default='')
+    # 地址
+    info_address = models.CharField(max_length=50, default='')
+    # 联系电话
+    info_tel = models.CharField(max_length=20, default='')
+    # 设备简单描述
+    info_description = models.TextField(max_length=200, default='')
+
     # TODO:权限在接口处通过对User属性判断即可
 
 
@@ -49,13 +62,14 @@ class Equipment(models.Model):
 
 class ApplicationStatus(Enum):
     # 发出待审核
-    SENTED=1
+    SENTED = 1
     # 正在进行
-    ON_PROCESS=2
+    ON_PROCESS = 2
     # 未通过审核
-    NOT_PASS=3
+    NOT_PASS = 3
     # 租期结束
-    RENT_END=4
+    RENT_END = 4
+
 
 class LoanApplication(models.Model):
     status = models.PositiveSmallIntegerField(default=ApplicationStatus.SENTED)

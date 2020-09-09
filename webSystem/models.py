@@ -21,7 +21,7 @@ class SystemUser(AbstractUser):
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断
-    examining_status = models.CharField(default='Normal')
+    examining_status = models.CharField(max_length=20, default='Normal')
 
     # 当用户提交审核申请时候 需要的信息
     # 实验室信息
@@ -46,7 +46,7 @@ class Equipment(models.Model):
     #     (4, 'wait_on_loan'), # 等待批准借出
     #     (5, 'on_loan'), # 已借出
     # )
-    status = models.CharField(default='exist')
+    status = models.CharField(max_length=20, default='exist')
     name = models.CharField(max_length=100)
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
     borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
@@ -60,7 +60,7 @@ class LoanApplication(models.Model):
     #     (3, 'not_pass'), # 未通过审核
     #     (4, 'rent_end'), # 租期结束
     # )
-    status = models.CharField(default='sented')
+    status = models.CharField(max_length=20, default='sented')
     loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)

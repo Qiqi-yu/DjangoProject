@@ -102,7 +102,7 @@ def equipment_search(request):
             ans = []
             for equipment in Equipment.objects.filter(status='on_shelf'):
                 # 记录该设备的各项信息参数
-                equipment_info = {'name': equipment.name, 'info': equipment.info,
+                equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
                                 'contact': [equipment.owner.info_lab, equipment.owner.info_address, equipment.owner.info_tel]}
                 ans.append(equipment_info)
             return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
@@ -131,7 +131,7 @@ def provider_equipment_add(request):
                 equipment.status = 'exist'
                 equipment.owner = user
                 equipment.save()
-                return HttpResponse(status=200, content=json.dumps({'name': name, 'info': info}))
+                return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': name, 'info': info}))
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
         else:
@@ -191,7 +191,7 @@ def provider_equipment_search(request):
                 ans = []
                 for equipment in equipments:
                     # 记录该设备的各项信息参数
-                    equipment_info = {'name': equipment.name, 'info': equipment.info}
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             else:
@@ -227,7 +227,7 @@ def provider_equipment_update(request, id):
                         equipment.name = name if name else equipment.name
                         equipment.info = info if info else equipment.info
                         equipment.save()
-                        return HttpResponse(status=200, content=json.dumps({'name': equipment.name, 'info': equipment.info}))
+                        return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': equipment.name, 'info': equipment.info}))
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no provider permission'}))
         else:
@@ -358,6 +358,7 @@ def users_confirm_apply(request):
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
+
 # 提供者申请上架设备
 def provider_equipment_on_shelf(request, id):
     # 检验方法
@@ -378,6 +379,7 @@ def provider_equipment_on_shelf(request, id):
                     elif equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
                     else:
+                        equipment.examining_status='examining'
                         equipment.status = 'wait_on_shelf'
                         equipment.save()
                         return HttpResponse(status=200)
@@ -389,6 +391,100 @@ def provider_equipment_on_shelf(request, id):
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
+
+# 提供者下架设备
+def provider_equipment_undercarriage(request, id):
+    # 检验方法
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_provider_privileges():
+                try:
+                    equipment = Equipment.objects.get(id=id)
+                except:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
+                else:
+                    if equipment.owner != user:
+                        return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
+                    elif equipment.status != 'on_shelf':
+                        return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
+                    else:
+                        equipment.status = 'exist'
+                        equipment.save()
+                        return HttpResponse(status=200)
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 管理员审核设备上架申请 设备状态的修改
+def admin_check_equipment_apply(request, id):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_admin_privileges():
+                try:
+                    check_equipment_id = request.POST['id']
+                    check_status = request.POST['pass']
+                    # 同意
+                    if check_status == 'true':
+                        try:
+                            equipment = Equipment.objects.get(id=id)
+                            # 将e_s改为Pass 便于通知
+                            equipment.examining_status='pass'
+                            equipment.status = 'on_shelf'
+                            equipment.save()
+                            return HttpResponse(status=200)
+                        except Equipment.DoesNotExist:
+                            return HttpResponse(status=400,content=json.dumps({'error':'no such applyed equipment'}))
+                    # 拒绝 需要理由
+                    elif check_status == 'false':
+                        try:
+                            check_reason=request.POST['reason']
+                            equipment = Equipment.objects.get(id=id)
+                            # 将e_s改为拒绝 便于通知
+                            equipment.examining_status = 'Reject'
+                            equipment.info_reject=check_reason
+                            equipment.save()
+                            return HttpResponse(status=200)
+                        except KeyError:
+                            return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
+                except KeyError:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 用户确认设备审核状态的通知
+def equipment_confirm_apply(request):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 将examining_status恢复默认状态
+            equipments = Equipment.objects.filter(owner=user, examining_status='pass' or 'reject')
+            for equipment in equipments:
+                equipment.examining_status = 'Normal'
+                equipment.save()
+            return HttpResponse(status=200)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 # 简单的删除
 def admin_users_delete(request,username):

@@ -33,5 +33,7 @@ urlpatterns = [
     path('provider/update/<int:id>', views.provider_equipment_update),
     path('provider/on-shelf-apply/<int:id>', views.provider_equipment_on_shelf),
     path('admin/users/<str:username>/delete',views.admin_users_delete)
-
+    path('provider/undercarriage/<int:id>', views.provider_equipment_undercarriage),
+    path('admin/equipment/check/apply/<int:id>',views.admin_check_equipment_apply),
+    path('equipment/confirm/apply', views.equipment_confirm_apply)
 ]

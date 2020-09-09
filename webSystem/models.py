@@ -50,11 +50,17 @@ class Equipment(models.Model):
     status = models.CharField(max_length=20, default='exist')
     name = models.CharField(max_length=100, default='')
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
+
+    # 设备的简单介绍
     info = models.TextField(max_length=1000, default='')
-    # unnecessary
-    # borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
-    # unnecessary
-    # loan_end_time = models.DateTimeField(default=timezone.now)
+
+    # 用户提交审核申请的状态判断 Normal Examining Reject Pass
+    examining_status = models.CharField(max_length=20, default='Normal')
+
+    # 审核被拒绝时的理由
+    info_reject = models.TextField(max_length=200, default='')
+
+
 
 
 class LoanApplication(models.Model):

@@ -33,10 +33,10 @@ class SystemUser(AbstractUser):
         return self.role in {'student', 'provider'}
 
     def has_provider_privileges(self):
-        return self.role is 'provider'
+        return self.role == 'provider'
 
     def has_admin_privileges(self):
-        return self.role is 'admin'
+        return self.role == 'admin'
 
 
 class Equipment(models.Model):

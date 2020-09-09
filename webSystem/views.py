@@ -49,7 +49,7 @@ def login_request(request):
             return HttpResponse(status=400, content=json.dumps({'error': 'no such a user'}))
         else:
             # 若用户名或密码为空
-            if user_name is '' or password is '':
+            if user_name == '' or password == '':
                 return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
             try:
                 # 获取用户信息
@@ -116,6 +116,7 @@ def equipment_search(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
 
 
+
 # 普通用户申请成为设备提供者
 def apply_provider(request):
     if request.method == 'POST':
@@ -129,7 +130,7 @@ def apply_provider(request):
         except KeyError:
             return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
         else:
-            if lab is '' or address is '' or tel is '' or description is '':
+            if lab == '' or address == '' or tel == '' or description == '':
                 return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
             else:
                 if 'username' in request.session:
@@ -163,7 +164,7 @@ def provider_equipment_search(request):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 检查用户是否具有该权限
-            if user.is_provider:
+            if user.has_provider_privileges():
                 equipments = Equipment.objects.filter(owner=user)
                 ans = []
                 for equipment in equipments:
@@ -177,3 +178,43 @@ def provider_equipment_search(request):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
+
+
+# 管理查询所有用户
+def users_query(request):
+        # 检验方法
+        if request.method == 'GET':
+            # 检验会话状态
+            if 'username' in request.session:
+                user_name = request.session['username']
+                user = SystemUser.objects.get(username=user_name)
+                # 检查用户是否具有该权限
+                if user.has_admin_privileges():
+                    try:
+                        examining=request.GET['examining']
+                        users_data=[]
+                        if SystemUser.objects.exists():
+                            # 非审核状态下，返回所有数据
+                            if examining == 'false':
+                                for user in SystemUser.objects.all():
+                                    users_data.append({'user_name':user.username,
+                                                       'user_type':user.role,})
+                            # 审核状态下，只返回需要审核的数据
+                            elif examining == 'true':
+                                query_set=SystemUser.objects.filter(examining_status='Examining')
+                                if query_set.exists():
+                                    for user in query_set.all():
+                                        users_data.append({'user_name':user.username,
+                                                           'user_type':user.role,'user_info_lab':user.info_lab,
+                                                           'user_info_tel':user.info_tel,'user_info_address':user.info_address,
+                                                           'user_info_description':user.info_description})
+                        return HttpResponse(status=200,content=json.dumps(users_data))
+                    except KeyError:
+                        return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
+                else:
+                    print(user.role)
+                    return HttpResponse(status=400,content=json.dumps({'error':'no permission'}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+        else:
+            return HttpResponse(status=400,content=json.dumps({'error':'require GET method'}))

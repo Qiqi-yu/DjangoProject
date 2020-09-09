@@ -48,14 +48,13 @@ class Equipment(models.Model):
     #     (5, 'on_loan'), # 已借出
     # )
     status = models.CharField(max_length=20, default='exist')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, default='')
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
+    info = models.TextField(max_length=1000, default='')
     # unnecessary
-    borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
+    # borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
     # unnecessary
-    loan_end_time = models.DateTimeField(default=timezone.now)
-
-    # 上架信息 info
+    # loan_end_time = models.DateTimeField(default=timezone.now)
 
 
 class LoanApplication(models.Model):

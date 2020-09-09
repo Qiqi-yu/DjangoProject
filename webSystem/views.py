@@ -20,10 +20,10 @@ def logon_request(request):
 
         # 判断参数名是否为空
         if username == '' or password == '' or email == '':
-            return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+            return HttpResponse(status=400, content=json.dumps({'error':'invalid parameters'}))
         # 判断用户名是否已经存在
         elif SystemUser.objects.filter(username=username).exists():
-            return HttpResponse(status=400, content=json.dumps({'error': 'user exists'}))
+            return HttpResponse(status=400, content=json.dumps({'error':'user exists'}))
         else:
             user = SystemUser()
             # 先将用户类型设置为普通用户
@@ -31,9 +31,9 @@ def logon_request(request):
             user.username = username
             user.set_password(password)
             user.save()
-            return HttpResponse(status=200, content=json.dumps({'user': username}))
+            return HttpResponse(status=200, content=json.dumps({'user':username}))
     else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
+        return HttpResponse(status=400, content=json.dumps({'error':'require POST'}))
 
 
 # 登录
@@ -41,22 +41,22 @@ def login_request(request):
     # 检验方法
     if request.method == 'POST':
         try:
-            # 获取参数
+        # 获取参数
             user_name = request.POST['username']
             password = request.POST['password']
         # 若参数不存在
         except KeyError:
-            return HttpResponse(status=400, content=json.dumps({'error': 'no such a user'}))
+            return HttpResponse(status=400,content=json.dumps({'error': 'no such a user'}))
         else:
             # 若用户名或密码为空
             if user_name == '' or password == '':
-                return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+                return HttpResponse(status=400,content=json.dumps({'error': 'invalid parameters'}))
             try:
                 # 获取用户信息
                 user = SystemUser.objects.get(username=user_name)
                 # 检查登录状态
                 if user.logged:
-                    return HttpResponse(status=400, content=json.dumps({'error': 'has logged in'}))
+                    return HttpResponse(status=400,content=json.dumps({'error': 'has logged in'}))
                 else:
                     # 验证密码
                     if user.check_password(password):
@@ -65,9 +65,9 @@ def login_request(request):
                         # 更新登录状态
                         user.logged = True
                         user.save()
-                        return HttpResponse(status=200, content=json.dumps({'user': user_name}))
+                        return HttpResponse(status=200,content=json.dumps({'user': user_name}))
                     else:
-                        return HttpResponse(status=400, content=json.dumps({'error': 'password is wrong'}))
+                        return HttpResponse(status=400,content=json.dumps({'error': 'password is wrong'}))
             # 若用户不存在
             except SystemUser.DoesNotExist:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no such a user'}))
@@ -93,28 +93,51 @@ def logout_request(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-# 查询所有上架的设备信息
-# TODO 接口测试
+# 用户查询所有上架的设备信息
 def equipment_search(request):
     # 检验方法
     if request.method == 'GET':
         # 检验会话状态
         if 'username' in request.session:
-            # 找到所有的上架设备
-            on_shelf_equipments = Equipment.objects.filter(status='on_shelf')
-            equipments = []
-            for equipment in on_shelf_equipments:
+            ans = []
+            for equipment in Equipment.objects.filter(status='on_shelf'):
                 # 记录该设备的各项信息参数
-                equipment_info = {'name': equipment.name, 'description': equipment.description,
-                                  'owner': equipment.owner.username,
-                                  'contact': [equipment.owner.info_address, equipment.owner.info_tel]}
-                equipments.append(equipment_info)
-            return HttpResponse(status=200, content=json.dumps({'on_shelf_equipments': equipments}))
+                equipment_info = {'name': equipment.name, 'info': equipment.info,
+                                'contact': [equipment.owner.info_lab, equipment.owner.info_address, equipment.owner.info_tel]}
+                ans.append(equipment_info)
+            return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+        else:
+            return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+
+
+
+# 提供者添加设备
+def provider_equipment_add(request):
+    # 检验方法
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_provider_privileges():
+                name = request.POST.get('name')
+                info = request.POST.get('info')
+                equipment = Equipment()
+                equipment.name = name
+                equipment.info = info
+                equipment.status = 'exist'
+                equipment.owner = user
+                equipment.save()
+                return HttpResponse(status=200, content=json.dumps({'name': name, 'info': info}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
-
+        return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
 
 
 # 普通用户申请成为设备提供者
@@ -155,7 +178,6 @@ def apply_provider(request):
 
 
 # 提供者查询己方设备信息
-# TODO 接口测试
 def provider_equipment_search(request):
     # 检验方法
     if request.method == 'GET':
@@ -169,7 +191,7 @@ def provider_equipment_search(request):
                 ans = []
                 for equipment in equipments:
                     # 记录该设备的各项信息参数
-                    equipment_info = {'name': equipment.name, 'description': equipment.description}
+                    equipment_info = {'name': equipment.name, 'info': equipment.info}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             else:
@@ -177,7 +199,42 @@ def provider_equipment_search(request):
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
+        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+
+
+# 提供者修改己方设备信息
+def provider_equipment_update(request, id):
+    # 检验方法
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_provider_privileges():
+                try:
+                    equipment = Equipment.objects.get(id=id)
+                except:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
+                else:
+                    if equipment.owner != user:
+                        return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
+                    elif equipment.status != 'exist':
+                        return HttpResponse(status=400, content=json.dumps({'error': 'already on shelf'}))
+                    else:
+                        name = request.POST.get('name')
+                        info = request.POST.get('info')
+                        equipment.name = name if name else equipment.name
+                        equipment.info = info if info else equipment.info
+                        equipment.save()
+                        return HttpResponse(status=200, content=json.dumps({'name': equipment.name, 'info': equipment.info}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no provider permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
+
 
 
 # 管理查询所有用户
@@ -300,3 +357,35 @@ def users_confirm_apply(request):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+# 提供者申请上架设备
+def provider_equipment_on_shelf(request, id):
+    # 检验方法
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_provider_privileges():
+                try:
+                    equipment = Equipment.objects.get(id=id)
+                except:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
+                else:
+                    if equipment.owner != user:
+                        return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
+                    elif equipment.status != 'exist':
+                        return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
+                    else:
+                        equipment.status = 'wait_on_shelf'
+                        equipment.save()
+                        return HttpResponse(status=200)
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+

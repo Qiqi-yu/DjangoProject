@@ -1,7 +1,5 @@
 from django.contrib import admin
-from .models import SystemUser
-from .models import Equipment
-from .models import LoanApplication
+from .models import SystemUser, Equipment, LoanApplication
 # Register your models here.
 
 admin.site.register(SystemUser)

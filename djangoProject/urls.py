@@ -28,5 +28,9 @@ urlpatterns = [
     path('admin/users/query',views.admin_users_query),
     path('users/info',views.users_info),
     path('admin/users/check/apply',views.admin_check_users_apply),
-    path('users/confirm/apply',views.users_confirm_apply)
+    path('users/confirm/apply',views.users_confirm_apply),
+    path('provider/add', views.provider_equipment_add),
+    path('provider/update/<int:id>', views.provider_equipment_update),
+    path('provider/on-shelf-apply/<int:id>', views.provider_equipment_on_shelf),
+
 ]

@@ -8,11 +8,11 @@ from django.contrib.auth.models import AbstractUser
 # 判断用户从is_student到is_provider的状态转换
 
 class SystemUser(AbstractUser):
-    ExamStatus=(
-        (1,'Normal'),
-        (2,'EXAMING'),
-        (3,'REJECT')
-    )
+    # ExamStatus=(
+    #     (1,'Normal'),
+    #     (2,'EXAMING'),
+    #     (3,'REJECT')
+    # )
     # 对User属性的判断
     is_student = models.BooleanField(default=False)
     is_provider = models.BooleanField(default=False)
@@ -21,7 +21,7 @@ class SystemUser(AbstractUser):
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断
-    examining_status = models.PositiveSmallIntegerField(choices=ExamStatus,default=1)
+    examining_status = models.CharField(default='Normal')
 
     # 当用户提交审核申请时候 需要的信息
     # 实验室信息
@@ -39,14 +39,14 @@ class SystemUser(AbstractUser):
 
 
 class Equipment(models.Model):
-    EquipmentStatus = (
-        (1, 'exist'), # 已添加
-        (2, 'wait_on_shelf'), # 等待批准上架
-        (3, 'on_shelf'), # 已上架
-        (4, 'wait_on_loan'), # 等待批准借出
-        (5, 'on_loan'), # 已借出
-    )
-    status = models.PositiveSmallIntegerField(choices=EquipmentStatus, default=1)
+    # EquipmentStatus = (
+    #     (1, 'exist'), # 已添加
+    #     (2, 'wait_on_shelf'), # 等待批准上架
+    #     (3, 'on_shelf'), # 已上架
+    #     (4, 'wait_on_loan'), # 等待批准借出
+    #     (5, 'on_loan'), # 已借出
+    # )
+    status = models.CharField(default='exist')
     name = models.CharField(max_length=100)
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
     borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
@@ -54,13 +54,13 @@ class Equipment(models.Model):
 
 
 class LoanApplication(models.Model):
-    ApplicationStatus = (
-        (1, 'sented'), # 发出待审核
-        (2, 'on_process'), # 正在进行
-        (3, 'not_pass'), # 未通过审核
-        (4, 'rent_end'), # 租期结束
-    )
-    status = models.PositiveSmallIntegerField(choices=ApplicationStatus, default=1)
+    # ApplicationStatus = (
+    #     (1, 'sented'), # 发出待审核
+    #     (2, 'on_process'), # 正在进行
+    #     (3, 'not_pass'), # 未通过审核
+    #     (4, 'rent_end'), # 租期结束
+    # )
+    status = models.CharField(default='sented')
     loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)

@@ -91,21 +91,52 @@ def logout_request(request):
         return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
 
 
-# 查询上架的设备信息
+# 查询所有上架的设备信息
 # TODO 接口测试
 def equipment_search(request):
+    # 检验方法
     if request.method == 'GET':
+        # 检验会话状态
         if 'username' in request.session:
-            on_shelf_equipments = Equipment.objects.filter(status=3)
+            # 找到所有的上架设备
+            on_shelf_equipments = Equipment.objects.filter(status='on_shelf')
             equipments = []
             for equipment in on_shelf_equipments:
+                # 记录该设备的各项信息参数
                 equipment_info = {'name': equipment.name, 'description': equipment.description,
-                                  'owner': equipment.owner.name, 'contact': equipment.owner.tel}
+                                  'owner': equipment.owner.username, 'contact': [equipment.owner.info_address, equipment.owner.info_tel]}
                 equipments.append(equipment_info)
             return HttpResponse(status=200, content=json.dumps({'on_shelf_equipments': equipments}))
         else:
             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+
+
+# 提供者查询己方设备信息
+# TODO 接口测试
+def provider_equipment_search(request):
+    # 检验方法
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.is_provider:
+                equipments = Equipment.objects.filter(owner=user)
+                ans = []
+                for equipment in equipments:
+                    # 记录该设备的各项信息参数
+                    equipment_info = {'name': equipment.name, 'description': equipment.description}
+                    ans.append(equipment_info)
+                return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+
 
 

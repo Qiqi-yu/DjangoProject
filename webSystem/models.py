@@ -13,7 +13,7 @@ class SystemUser(AbstractUser):
     role = models.CharField(max_length=20, default='student')
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
-    # 用户提交审核申请的状态判断 Normal Checking Reject
+    # 用户提交审核申请的状态判断 Normal Examining Reject
     examining_status = models.CharField(max_length=20, default='Normal')
 
     # 当用户提交审核申请时候 需要的信息
@@ -25,6 +25,9 @@ class SystemUser(AbstractUser):
     info_tel = models.CharField(max_length=20, default='')
     # 设备简单描述
     info_description = models.TextField(max_length=200, default='')
+
+    # 审核被拒绝时的理由
+    info_reject=models.TextField(max_length=200,default='')
 
     def has_student_privileges(self):
         return self.role in {'student', 'provider'}

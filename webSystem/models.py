@@ -17,7 +17,10 @@ class SystemUser(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_provider = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    # unnecessary
     examining = models.BooleanField(default=False)
+    # student, provider, admin
+    #role = models.CharField(max_length=20, default='student')
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断
@@ -35,6 +38,9 @@ class SystemUser(AbstractUser):
 
     # TODO:权限在接口处通过对User属性判断即可
 
+    #def has_student_privileges(self):
+    #  return self.role in {'student', 'provider'}
+
 
 
 
@@ -49,8 +55,12 @@ class Equipment(models.Model):
     status = models.CharField(max_length=20, default='exist')
     name = models.CharField(max_length=100)
     owner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="owner")
+    # unnecessary
     borrower = models.ForeignKey('SystemUser', on_delete=models.SET_DEFAULT, default='', related_name="borrower")
+    # unnecessary
     loan_end_time = models.DateTimeField(default=timezone.now)
+
+    # 上架信息 info
 
 
 class LoanApplication(models.Model):
@@ -60,6 +70,11 @@ class LoanApplication(models.Model):
     #     (3, 'not_pass'), # 未通过审核
     #     (4, 'rent_end'), # 租期结束
     # )
+
+    # sent
+    # approved
+    # disapproved
+
     status = models.CharField(max_length=20, default='sented')
     loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")

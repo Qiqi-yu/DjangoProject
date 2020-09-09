@@ -25,5 +25,8 @@ urlpatterns = [
     path('equipment/search', views.equipment_search),
     path('provider/search', views.provider_equipment_search),
     path('users/apply_provider',views.apply_provider),
-    path('admin/users/query',views.users_query)
+    path('admin/users/query',views.admin_users_query),
+    path('users/info',views.users_info),
+    path('admin/users/check/apply',views.admin_check_users_apply),
+    path('users/confirm/apply',views.users_confirm_apply)
 ]

@@ -181,7 +181,7 @@ def provider_equipment_search(request):
 
 
 # 管理查询所有用户
-def users_query(request):
+def admin_users_query(request):
         # 检验方法
         if request.method == 'GET':
             # 检验会话状态
@@ -212,9 +212,91 @@ def users_query(request):
                     except KeyError:
                         return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
                 else:
-                    print(user.role)
+                    # print(user.role)
                     return HttpResponse(status=400,content=json.dumps({'error':'no permission'}))
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
         else:
             return HttpResponse(status=400,content=json.dumps({'error':'require GET method'}))
+
+
+# 用户查询自己的信息
+def users_info(request):
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 返回json数据
+            user_data=[]
+            user_data.append({'user_name': user.username,
+                               'user_type': user.role,'user_examining':user.examining_status,
+                                'user_info_lab': user.info_lab,
+                               'user_info_tel': user.info_tel, 'user_info_address': user.info_address,
+                               'user_info_description': user.info_description})
+            return HttpResponse(status=200,content=json.dumps(user_data))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
+
+
+# 管理员审核用户申请 用户状态的修改
+def admin_check_users_apply(request):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_admin_privileges():
+                try:
+                    check_username=request.POST['username']
+                    check_status = request.POST['pass']
+                    # 同意
+                    if check_status == 'true':
+                        try:
+                            apply_user=SystemUser.objects.get(username=check_username)
+                            # 将e_s改为Pass 便于通知
+                            apply_user.examining_status='Pass'
+                            apply_user.role='provider'
+                            apply_user.save()
+                            return HttpResponse(status=200)
+                        except SystemUser.DoesNotExist:
+                            return HttpResponse(status=400,content=json.dumps({'error':'no such applyed user'}))
+                    # 拒绝 需要理由
+                    elif check_status == 'false':
+                        try:
+                            check_reason=request.POST['reason']
+                            apply_user = SystemUser.objects.get(username=check_username)
+                            # 将e_s改为拒绝 便于通知
+                            apply_user.examining_status = 'Reject'
+                            apply_user.info_reject=check_reason
+                            apply_user.save()
+                            return HttpResponse(status=200)
+                        except KeyError:
+                            return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
+                except KeyError:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 用户确认申请审核状态的通知
+def users_confirm_apply(request):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 将examining_status恢复默认状态
+            user.examining_status='Normal'
+            user.save()
+            return HttpResponse(status=200)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))

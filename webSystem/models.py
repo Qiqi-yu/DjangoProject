@@ -13,7 +13,7 @@ class SystemUser(AbstractUser):
     role = models.CharField(max_length=20, default='student')
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
-    # 用户提交审核申请的状态判断 Normal Examining Reject
+    # 用户提交审核申请的状态判断 Normal Examining Reject Pass
     examining_status = models.CharField(max_length=20, default='Normal')
 
     # 当用户提交审核申请时候 需要的信息

@@ -389,3 +389,30 @@ def provider_equipment_on_shelf(request, id):
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
+
+# 简单的删除
+def admin_users_delete(request,username):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_admin_privileges():
+                # try:
+                #     delete_user_name = request.POST['username']
+                try:
+                    delete_user = SystemUser.objects.get(username=username)
+                    delete_user.delete()
+                    # TODO:如果需要保留历史租借申请 需要更改级联删除 通过搜素完成
+                    return HttpResponse(status=200)
+                except SystemUser.DoesNotExist:
+                    return HttpResponse(status=400,content=json.dumps({'error':'no such user'}))
+                # except KeyError:
+                #     return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
+            else:
+                return HttpResponse(status=400,content=json.dumps({'error':'no permissions'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))

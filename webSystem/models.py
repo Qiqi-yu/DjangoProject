@@ -8,22 +8,12 @@ from django.contrib.auth.models import AbstractUser
 # 判断用户从is_student到is_provider的状态转换
 
 class SystemUser(AbstractUser):
-    # ExamStatus=(
-    #     (1,'Normal'),
-    #     (2,'EXAMING'),
-    #     (3,'REJECT')
-    # )
-    # 对User属性的判断
-    is_student = models.BooleanField(default=False)
-    is_provider = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    # unnecessary
-    examining = models.BooleanField(default=False)
-    # student, provider, admin
-    #role = models.CharField(max_length=20, default='student')
+
+    # 用户的属性 student, provider, admin
+    role = models.CharField(max_length=20, default='student')
     # 暂时加入对登录状态的判断
     logged = models.BooleanField(default=False)
-    # 用户提交审核申请的状态判断
+    # 用户提交审核申请的状态判断 Normal Checking Reject
     examining_status = models.CharField(max_length=20, default='Normal')
 
     # 当用户提交审核申请时候 需要的信息
@@ -36,12 +26,14 @@ class SystemUser(AbstractUser):
     # 设备简单描述
     info_description = models.TextField(max_length=200, default='')
 
-    # TODO:权限在接口处通过对User属性判断即可
+    def has_student_privileges(self):
+        return self.role in {'student', 'provider'}
 
-    #def has_student_privileges(self):
-    #  return self.role in {'student', 'provider'}
+    def has_provider_privileges(self):
+        return self.role is 'provider'
 
-
+    def has_admin_privileges(self):
+        return self.role is 'admin'
 
 
 class Equipment(models.Model):
@@ -81,5 +73,3 @@ class LoanApplication(models.Model):
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)
     loan_start_time = models.DateTimeField(default=timezone.now)
     loan_end_time = models.DateTimeField(default=timezone.now)
-
-

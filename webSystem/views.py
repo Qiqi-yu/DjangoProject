@@ -25,7 +25,7 @@ def logon_request(request):
         else:
             user = SystemUser()
             # 先将用户类型设置为普通用户
-            user.is_student=True
+            user.role='student'
             user.username = username
             user.set_password(password)
             user.save()
@@ -111,6 +111,32 @@ def equipment_search(request):
             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+
+
+def apply_provider(request):
+    if request.method == 'POST':
+        try:
+        # 获取参数
+            lab = request.POST['info_lab']
+            address = request.POST['info_tel']
+            tel = request.POST['info_tel']
+            description = request.POST['info_description']
+        # 若参数不存在
+        except KeyError:
+            return HttpResponse(status=400,content=json.dumps({'error': 'invalid parameters'}))
+        else:
+
+            if lab is '' or address is '' or tel is '' or description is '':
+                return HttpResponse(status=400,content=json.dumps({'error': 'invalid parameters'}))
+            else:
+                if 'username' in request.session:
+                    user_name = request.session['username']
+                    user = SystemUser.objects.get(username=user_name)
+
+                else:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400,content=json.dumps({'error': 'require POST'}))
 
 
 # 提供者查询己方设备信息

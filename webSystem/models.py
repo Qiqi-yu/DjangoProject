@@ -59,19 +59,13 @@ class Equipment(models.Model):
 
 class LoanApplication(models.Model):
     # ApplicationStatus = (
-    #     (1, 'sented'), # 发出待审核
-    #     (2, 'on_process'), # 正在进行
-    #     (3, 'not_pass'), # 未通过审核
-    #     (4, 'rent_end'), # 租期结束
+    #     (0, 'pending'),   # 已发出，等待审核
+    #     (1, 'approved'),  # 通过
+    #     (2, 'rejected'),  # 拒绝
     # )
-
-    # sent
-    # approved
-    # disapproved
-
-    status = models.CharField(max_length=20, default='sented')
-    loaner = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="loaner")
+    status = models.CharField(max_length=20, default='pending')
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)
-    loan_start_time = models.DateTimeField(default=timezone.now)
-    loan_end_time = models.DateTimeField(default=timezone.now)
+    start_time = models.DateTimeField(default=timezone.now)
+    end_time = models.DateTimeField(default=timezone.now)
+    statement = models.CharField(max_length=1000, default='')

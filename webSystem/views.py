@@ -95,7 +95,7 @@ def login_request(request):
                 if user.check_password(password):
                     # 设置Cookie
                     request.session['username'] = user_name
-                    return HttpResponse(status=200, content=json.dumps({'user': user_name,'role':user.role}))
+                    return HttpResponse(status=200, content=json.dumps({'user': user_name, 'role': user.role}))
                 else:
                     return HttpResponse(status=400, content=json.dumps({'error': 'password is wrong'}))
             # 若用户不存在
@@ -252,7 +252,8 @@ def provider_equipment_update(request, id):
                         equipment.name = name if name else equipment.name
                         equipment.info = info if info else equipment.info
                         equipment.save()
-                        return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': equipment.name, 'info': equipment.info}))
+                        return HttpResponse(status=200, content=json.dumps(
+                            {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}))
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no provider permission'}))
         else:
@@ -311,10 +312,10 @@ def users_info(request):
             user = SystemUser.objects.get(username=user_name)
             # 返回json数据
             user_data = {'user_name': user.username,
-                          'user_type': user.role, 'user_examining': user.examining_status,
-                          'user_info_lab': user.info_lab,
-                          'user_info_tel': user.info_tel, 'user_info_address': user.info_address,
-                          'user_info_description': user.info_description}
+                         'user_type': user.role, 'user_examining': user.examining_status,
+                         'user_info_lab': user.info_lab,
+                         'user_info_tel': user.info_tel, 'user_info_address': user.info_address,
+                         'user_info_description': user.info_description,'user_info_reject':user.info_reject}
             return HttpResponse(status=200, content=json.dumps(user_data))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -403,7 +404,7 @@ def provider_equipment_on_shelf(request, id):
                     elif equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
                     else:
-                        equipment.examining_status='examining'
+                        equipment.examining_status = 'examining'
                         equipment.status = 'wait_on_shelf'
                         equipment.save()
                         return HttpResponse(status=200)
@@ -464,24 +465,24 @@ def admin_check_equipment_apply(request, id):
                         try:
                             equipment = Equipment.objects.get(id=id)
                             # 将e_s改为Pass 便于通知
-                            equipment.examining_status='pass'
+                            equipment.examining_status = 'pass'
                             equipment.status = 'on_shelf'
                             equipment.save()
                             return HttpResponse(status=200)
                         except Equipment.DoesNotExist:
-                            return HttpResponse(status=400,content=json.dumps({'error':'no such applyed equipment'}))
+                            return HttpResponse(status=400, content=json.dumps({'error': 'no such applyed equipment'}))
                     # 拒绝 需要理由
                     elif check_status == 'false':
                         try:
-                            check_reason=request.POST['reason']
+                            check_reason = request.POST['reason']
                             equipment = Equipment.objects.get(id=id)
                             # 将e_s改为拒绝 便于通知
                             equipment.examining_status = 'Reject'
-                            equipment.info_reject=check_reason
+                            equipment.info_reject = check_reason
                             equipment.save()
                             return HttpResponse(status=200)
                         except KeyError:
-                            return HttpResponse(status=400,content=json.dumps({'error':'invalid parameters'}))
+                            return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
                 except KeyError:
                     return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
             else:
@@ -511,7 +512,7 @@ def equipment_confirm_apply(request):
 
 
 # 简单的删除用户
-def admin_users_delete(request,username):
+def admin_users_delete(request, username):
     if request.method == 'POST':
         # 检验会话状态
         if 'username' in request.session:
@@ -550,7 +551,7 @@ def equipment_delete(request, id):
                 try:
                     delete_equipment = Equipment.objects.get(id=id)
                 except:
-                    return HttpResponse(status=400,content=json.dumps({'error':'no such equipment'}))
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no such equipment'}))
                 else:
                     if delete_equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
@@ -560,7 +561,7 @@ def equipment_delete(request, id):
                         delete_equipment.delete()
                         return HttpResponse(status=200)
             else:
-                return HttpResponse(status=400,content=json.dumps({'error':'no permissions'}))
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permissions'}))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
@@ -595,8 +596,10 @@ def equipments_search(request, role):
                     # 获取未来已占用的时间段
                     occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
-                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
-                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
+                                      'status': equipment.status,
+                                      'contact': [equipment.owner.username, equipment.owner.info_lab,
+                                                  equipment.owner.info_address,
                                                   equipment.owner.info_tel],
                                       'occupancies': occs}
                     ans.append(equipment_info)
@@ -609,7 +612,8 @@ def equipments_search(request, role):
                     # 获取未来已占用的时间段
                     occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
-                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info, 'status':equipment.status,
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
+                                      'status': equipment.status,
                                       'occupancies': occs}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
@@ -621,7 +625,8 @@ def equipments_search(request, role):
                     occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
-                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
+                                      'contact': [equipment.owner.username, equipment.owner.info_lab,
+                                                  equipment.owner.info_address,
                                                   equipment.owner.info_tel],
                                       'occupancies': occs}
                     ans.append(equipment_info)
@@ -643,10 +648,11 @@ def equipment_detail(request, id):
     else:
         # 获取未来已占用的时间段
         occs = _equipment_occupancies(equipment, datetime.now())
-        return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
-                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
-                                                  equipment.owner.info_tel],
-                                      'occupancies': occs}))
+        return HttpResponse(status=200, content=json.dumps(
+            {'id': equipment.id, 'name': equipment.name, 'info': equipment.info, 'status': equipment.status,
+             'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
+                         equipment.owner.info_tel],
+             'occupancies': occs}))
 
 
 def loan_create(request):

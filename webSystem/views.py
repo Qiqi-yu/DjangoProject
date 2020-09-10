@@ -95,7 +95,6 @@ def login_request(request):
                 if user.check_password(password):
                     # 设置Cookie
                     request.session['username'] = user_name
-                    user=SystemUser.objects.get(username=user_name)
                     return HttpResponse(status=200, content=json.dumps({'user': user_name,'role':user.role}))
                 else:
                     return HttpResponse(status=400, content=json.dumps({'error': 'password is wrong'}))
@@ -311,11 +310,11 @@ def users_info(request):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 返回json数据
-            user_data = [{'user_name': user.username,
+            user_data = {'user_name': user.username,
                           'user_type': user.role, 'user_examining': user.examining_status,
                           'user_info_lab': user.info_lab,
                           'user_info_tel': user.info_tel, 'user_info_address': user.info_address,
-                          'user_info_description': user.info_description}]
+                          'user_info_description': user.info_description}
             return HttpResponse(status=200, content=json.dumps(user_data))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))

@@ -35,6 +35,5 @@ urlpatterns = [
     path('admin/equipment/check/apply/<int:id>',views.admin_check_equipment_apply),
     path('equipment/confirm/apply', views.equipment_confirm_apply),
     path('equipment/delete/<int:id>', views.equipment_delete),
-    path('equipment/delete/<int:id>', views.equipment_delete),
     path('equipment/search/<str:role>', views.equipments_search),
 ]

@@ -594,7 +594,7 @@ def loan_create(request):
                 equipment = Equipment.objects.get(id=eid)
             except SystemUser.DoesNotExist:
                 return HttpResponse(status=404, content=json.dumps({'error': 'no such equipment'}))
-            # TODO: 检查设备是否被占用
+            # TODO: 检查设备是否已上架且未被占用
             appl = LoanApplication()
             appl.applicant = user
             appl.equipment = equipment
@@ -609,6 +609,20 @@ def loan_create(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
+def _appl_json_object(appl):
+    return {
+        'id': appl.id,
+        'status': appl.status,
+        'equipment': {
+            'id': appl.equipment.id,
+            'name': appl.equipment.name,
+        },
+        'start_time': datetime.timestamp(appl.start_time),
+        'end_time': datetime.timestamp(appl.end_time),
+        'statement': appl.statement,
+        'response': appl.response,
+    }
+
 def loan_my(request):
     if request.method == 'GET':
         # 检验会话状态
@@ -616,13 +630,12 @@ def loan_my(request):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 查找自己发起的所有申请
-            appls = []
-            for appl in LoanApplication.objects.filter(applicant=user):
-                appls.append('x')
+            appls = list(map(_appl_json_object, LoanApplication.objects.filter(applicant=user)))
+            return HttpResponse(status=200, content=json.dumps(appls))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
 
 
 def loan_list(request, eid):
@@ -631,18 +644,44 @@ def loan_list(request, eid):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            # 查找设备对应的所有申请
+            try:
+                equipment = Equipment.objects.get(id=eid)
+            except SystemUser.DoesNotExist:
+                return HttpResponse(status=404, content=json.dumps({'error': 'no such equipment'}))
+            if equipment.owner != user:
+                return HttpResponse(status=401, content=json.dumps({'error': 'not its owner'}))
+            appls = list(map(_appl_json_object, LoanApplication.objects.filter(equipment=equipment)))
+            return HttpResponse(status=200, content=json.dumps(appls))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
 
 
 def loan_review(request, id):
-    if request.method == 'GET':
+    if request.method == 'POST':
         # 检验会话状态
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            try:
+                appl = LoanApplication.objects.get(id=id)
+            except LoanApplication.DoesNotExist:
+                return HttpResponse(status=404, content=json.dumps({'error': 'no such application'}))
+            if appl.equipment.owner != user:
+                return HttpResponse(status=401, content=json.dumps({'error': 'not its owner'}))
+            try:
+                accept = int(request.POST['accept'])
+                response = request.POST['response']
+            except:
+                return HttpResponse(status=400, content=json.dumps({'error': 'Incorrect format'}))
+            # TODO: 检查设备是否上架且未被占用
+            # 更新申请状态
+            appl.status = 'approved' if accept != 0 else 'rejected'
+            appl.response = response
+            appl.save()
+            return HttpResponse(status=200)
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:

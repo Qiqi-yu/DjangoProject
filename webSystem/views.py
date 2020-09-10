@@ -555,7 +555,7 @@ def equipment_delete(request, id):
                 else:
                     if delete_equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
-                    elif delete_equipment.status == 'exist' or delete_equipment.status == 'wait_on_shelf':
+                    elif delete_equipment.status == 'on_shelf' or delete_equipment.status == 'wait_on_shelf':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot delete'}))
                     else:
                         delete_equipment.delete()

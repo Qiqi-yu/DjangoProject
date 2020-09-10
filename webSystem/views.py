@@ -559,7 +559,7 @@ def equipments_search(request, role):
                     occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
-                                      'contact': [equipment.owner.name, equipment.owner.info_lab, equipment.owner.info_address,
+                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
                                                   equipment.owner.info_tel],
                                       'occupancies': occs}
                     ans.append(equipment_info)
@@ -607,7 +607,7 @@ def equipment_detail(request, id):
         # 获取未来已占用的时间段
         occs = _equipment_occupancies(equipment, datetime.now())
         return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
-                                      'contact': [equipment.owner.name, equipment.owner.info_lab, equipment.owner.info_address,
+                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
                                                   equipment.owner.info_tel],
                                       'occupancies': occs}))
 

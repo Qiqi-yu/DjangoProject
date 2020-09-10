@@ -11,8 +11,6 @@ class SystemUser(AbstractUser):
 
     # 用户的属性 student, provider, admin
     role = models.CharField(max_length=20, default='student')
-    # 暂时加入对登录状态的判断
-    logged = models.BooleanField(default=False)
     # 用户提交审核申请的状态判断 Normal Examining Reject Pass
     examining_status = models.CharField(max_length=20, default='Normal')
 

@@ -1,8 +1,9 @@
 from django.shortcuts import render
 
-from .models import SystemUser, Equipment
+from .models import SystemUser, Equipment, LoanApplication
 from django.http import HttpResponse
 import json
+from datetime import datetime
 
 
 # Create your views here.
@@ -574,3 +575,75 @@ def equipments_search(request, role):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
+
+
+def loan_create(request):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            try:
+                eid = int(request.POST['equipment'])
+                start_time = datetime.utcfromtimestamp(int(request.POST['start_time']))
+                end_time = datetime.utcfromtimestamp(int(request.POST['end_time']))
+                statement = request.POST['statement']
+            except:
+                return HttpResponse(status=400, content=json.dumps({'error': 'Incorrect format'}))
+            try:
+                equipment = Equipment.objects.get(id=eid)
+            except SystemUser.DoesNotExist:
+                return HttpResponse(status=404, content=json.dumps({'error': 'no such equipment'}))
+            # TODO: 检查设备是否被占用
+            appl = LoanApplication()
+            appl.applicant = user
+            appl.equipment = equipment
+            appl.start_time = start_time
+            appl.end_time = end_time
+            appl.statement = statement
+            appl.save()
+            return HttpResponse(status=200, content=json.dumps({'id': appl.id}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+def loan_my(request):
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 查找自己发起的所有申请
+            appls = []
+            for appl in LoanApplication.objects.filter(applicant=user):
+                appls.append('x')
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+def loan_list(request, eid):
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+def loan_review(request, id):
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))

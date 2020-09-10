@@ -36,4 +36,8 @@ urlpatterns = [
     path('equipment/confirm/apply', views.equipment_confirm_apply),
     path('equipment/delete/<int:id>', views.equipment_delete),
     path('equipment/search/<str:role>', views.equipments_search),
+    path('loan/create', views.loan_create),
+    path('loan/my', views.loan_my),
+    path('loan/list/<int:eid>', views.loan_list),
+    path('loan/<int:id>/review', views.loan_review),
 ]

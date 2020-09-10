@@ -73,3 +73,4 @@ class LoanApplication(models.Model):
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(default=timezone.now)
     statement = models.CharField(max_length=1000, default='')
+    response = models.CharField(max_length=1000, default='')

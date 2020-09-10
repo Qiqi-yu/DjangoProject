@@ -16,7 +16,6 @@ def logon_request(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         email = request.POST.get('email')
-
         # TODO 邮箱认证
 
         # 判断参数名是否为空

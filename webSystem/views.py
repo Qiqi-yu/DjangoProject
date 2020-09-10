@@ -4,6 +4,7 @@ from .models import SystemUser, Equipment, LoanApplication
 from django.http import HttpResponse
 import json
 from datetime import datetime
+from django.core.mail import send_mail
 
 
 # Create your views here.
@@ -31,6 +32,17 @@ def logon_request(request):
             user.username = username
             user.set_password(password)
             user.save()
+            send_mail(
+                '设备租借平台帐号激活', '',
+                'xuexidepang@yandex.com',
+                [email],
+                html_message='''
+                    <p>亲爱的 <strong>''' + username + '''</strong> 同学你好！</p>
+                    <p>哈哈哈哈哈哈！</p>
+                ''',
+                fail_silently=False,
+            )
+
             return HttpResponse(status=200, content=json.dumps({'user': username}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))

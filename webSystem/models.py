@@ -42,8 +42,6 @@ class Equipment(models.Model):
     #     (1, 'exist'), # 已添加
     #     (2, 'wait_on_shelf'), # 等待批准上架
     #     (3, 'on_shelf'), # 已上架
-    #     (4, 'wait_on_loan'), # 等待批准借出
-    #     (5, 'on_loan'), # 已借出
     # )
     status = models.CharField(max_length=20, default='exist')
     name = models.CharField(max_length=100, default='')

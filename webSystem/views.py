@@ -532,6 +532,19 @@ def equipment_delete(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
+# 一台设备被占用的时间段
+def _equipment_occupancies(equipment, after, keep_datetime=False):
+    appls = LoanApplication.objects.filter(
+        equipment=equipment, status='approved', end_time__gte=after)
+    ret = []
+    for appl in appls:
+        if keep_datetime:
+            ret.append([appl.start_time, appl.end_time])
+        else:
+            ret.append([datetime.timestamp(appl.start_time), datetime.timestamp(appl.end_time)])
+    return ret
+
+
 # 不同角色对所有设备的查询
 def equipments_search(request, role):
     # 检验方法
@@ -544,10 +557,13 @@ def equipments_search(request, role):
             if role == 'admin' and user.has_admin_privileges():
                 ans = []
                 for equipment in Equipment.objects.All():
+                    # 获取未来已占用的时间段
+                    occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
                                       'contact': [equipment.owner.name, equipment.owner.info_lab, equipment.owner.info_address,
-                                                  equipment.owner.info_tel]}
+                                                  equipment.owner.info_tel],
+                                      'occupancies': occs}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             # 提供者查询己方所有设备
@@ -555,18 +571,24 @@ def equipments_search(request, role):
                 equipments = Equipment.objects.filter(owner=user)
                 ans = []
                 for equipment in equipments:
+                    # 获取未来已占用的时间段
+                    occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
-                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info, 'status':equipment.status}
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info, 'status':equipment.status,
+                                      'occupancies': occs}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             # 普通用户或提供者查询所有上架设备
             elif role == 'student' and user.has_student_privileges():
                 ans = []
                 for equipment in Equipment.objects.filter(status='on_shelf'):
+                    # 获取未来已占用的时间段
+                    occs = _equipment_occupancies(equipment, datetime.now())
                     # 记录该设备的各项信息参数
                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
                                       'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
-                                                  equipment.owner.info_tel]}
+                                                  equipment.owner.info_tel],
+                                      'occupancies': occs}
                     ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             else:
@@ -583,18 +605,23 @@ def loan_create(request):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            if not user.has_student_privileges():
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             try:
                 eid = int(request.POST['equipment'])
                 start_time = datetime.utcfromtimestamp(int(request.POST['start_time']))
                 end_time = datetime.utcfromtimestamp(int(request.POST['end_time']))
                 statement = request.POST['statement']
+                if start_time >= end_time: raise Exception('')
             except:
                 return HttpResponse(status=400, content=json.dumps({'error': 'Incorrect format'}))
             try:
                 equipment = Equipment.objects.get(id=eid)
             except SystemUser.DoesNotExist:
                 return HttpResponse(status=404, content=json.dumps({'error': 'no such equipment'}))
-            # TODO: 检查设备是否已上架且未被占用
+            # 检查设备是否已上架且未被占用
+            if not _equipment_available(equipment, start_time, end_time):
+                return HttpResponse(status=400, content=json.dumps({'error': 'Equipment occupied or not on shelf'}))
             appl = LoanApplication()
             appl.applicant = user
             appl.equipment = equipment
@@ -623,12 +650,24 @@ def _appl_json_object(appl):
         'response': appl.response,
     }
 
+# 一台设备是否可以在给定时间段租借
+def _equipment_available(equipment, start_time, end_time):
+    if equipment.status != 'on_shelf': return False
+    occs = _equipment_occupancies(equipment, start_time)
+    start_time = datetime.timestamp(start_time)
+    end_time = datetime.timestamp(end_time)
+    for occ in occs:
+        if max(occ[0], start_time) < min(occ[1], end_time): return False
+    return True
+
 def loan_my(request):
     if request.method == 'GET':
         # 检验会话状态
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            if not user.has_student_privileges():
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             # 查找自己发起的所有申请
             appls = list(map(_appl_json_object, LoanApplication.objects.filter(applicant=user)))
             return HttpResponse(status=200, content=json.dumps(appls))
@@ -644,6 +683,8 @@ def loan_list(request, eid):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            if not user.has_student_privileges():
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             # 查找设备对应的所有申请
             try:
                 equipment = Equipment.objects.get(id=eid)
@@ -665,6 +706,8 @@ def loan_review(request, id):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
+            if not user.has_provider_privileges():
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             try:
                 appl = LoanApplication.objects.get(id=id)
             except LoanApplication.DoesNotExist:
@@ -676,7 +719,11 @@ def loan_review(request, id):
                 response = request.POST['response']
             except:
                 return HttpResponse(status=400, content=json.dumps({'error': 'Incorrect format'}))
-            # TODO: 检查设备是否上架且未被占用
+            if appl.status != 'pending':
+                return HttpResponse(status=400, content=json.dumps({'error': 'Already reviewed'}))
+            # 检查设备是否已上架且未被占用
+            if accept != 0 and not _equipment_available(appl.equipment, appl.start_time, appl.end_time):
+                return HttpResponse(status=400, content=json.dumps({'error': 'Equipment occupied or not on shelf'}))
             # 更新申请状态
             appl.status = 'approved' if accept != 0 else 'rejected'
             appl.response = response

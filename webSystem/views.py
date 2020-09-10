@@ -95,7 +95,8 @@ def login_request(request):
                 if user.check_password(password):
                     # 设置Cookie
                     request.session['username'] = user_name
-                    return HttpResponse(status=200, content=json.dumps({'user': user_name}))
+                    user=SystemUser.objects.get(username=user_name)
+                    return HttpResponse(status=200, content=json.dumps({'user': user_name,'role':user.role}))
                 else:
                     return HttpResponse(status=400, content=json.dumps({'error': 'password is wrong'}))
             # 若用户不存在

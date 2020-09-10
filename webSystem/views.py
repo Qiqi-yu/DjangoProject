@@ -512,3 +512,32 @@ def admin_users_delete(request,username):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 提供者删除设备
+def equipment_delete(request, id):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            # 检查用户是否具有该权限
+            if user.has_provider_privileges():
+                try:
+                    delete_equipment = Equipment.objects.get(id=id)
+                except:
+                    return HttpResponse(status=400,content=json.dumps({'error':'no such equipment'}))
+                else:
+                    if delete_equipment.owner != user:
+                        return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
+                    elif delete_equipment.status == 'exist' or delete_equipment.status == 'wait_on_shelf':
+                        return HttpResponse(status=400, content=json.dumps({'error': 'cannot delete'}))
+                    else:
+                        delete_equipment.delete()
+                        return HttpResponse(status=200)
+            else:
+                return HttpResponse(status=400,content=json.dumps({'error':'no permissions'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))

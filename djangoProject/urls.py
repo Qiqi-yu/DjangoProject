@@ -22,8 +22,6 @@ urlpatterns = [
     path('users/logon', views.logon_request),
     path('users/login',views.login_request),
     path('users/logout',views.logout_request),
-    path('equipment/search', views.equipment_search),
-    path('provider/search', views.provider_equipment_search),
     path('users/apply_provider',views.apply_provider),
     path('admin/users/query',views.admin_users_query),
     path('users/info',views.users_info),
@@ -37,4 +35,6 @@ urlpatterns = [
     path('admin/equipment/check/apply/<int:id>',views.admin_check_equipment_apply),
     path('equipment/confirm/apply', views.equipment_confirm_apply),
     path('equipment/delete/<int:id>', views.equipment_delete),
+    path('equipment/delete/<int:id>', views.equipment_delete),
+    path('equipment/search/<str:role>', views.equipments_search),
 ]

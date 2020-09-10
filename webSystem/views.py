@@ -94,22 +94,22 @@ def logout_request(request):
 
 
 # 用户查询所有上架的设备信息
-def equipment_search(request):
-    # 检验方法
-    if request.method == 'GET':
-        # 检验会话状态
-        if 'username' in request.session:
-            ans = []
-            for equipment in Equipment.objects.filter(status='on_shelf'):
-                # 记录该设备的各项信息参数
-                equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
-                                'contact': [equipment.owner.info_lab, equipment.owner.info_address, equipment.owner.info_tel]}
-                ans.append(equipment_info)
-            return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
-        else:
-            return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
-    else:
-        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+# def equipment_search(request):
+#     # 检验方法
+#     if request.method == 'GET':
+#         # 检验会话状态
+#         if 'username' in request.session:
+#             ans = []
+#             for equipment in Equipment.objects.filter(status='on_shelf'):
+#                 # 记录该设备的各项信息参数
+#                 equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
+#                                 'contact': [equipment.owner.info_lab, equipment.owner.info_address, equipment.owner.info_tel]}
+#                 ans.append(equipment_info)
+#             return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+#         else:
+#             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
+#     else:
+#         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
 
 
 
@@ -177,29 +177,29 @@ def apply_provider(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-# 提供者查询己方设备信息
-def provider_equipment_search(request):
-    # 检验方法
-    if request.method == 'GET':
-        # 检验会话状态
-        if 'username' in request.session:
-            user_name = request.session['username']
-            user = SystemUser.objects.get(username=user_name)
-            # 检查用户是否具有该权限
-            if user.has_provider_privileges():
-                equipments = Equipment.objects.filter(owner=user)
-                ans = []
-                for equipment in equipments:
-                    # 记录该设备的各项信息参数
-                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}
-                    ans.append(equipment_info)
-                return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
-            else:
-                return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
-        else:
-            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
-    else:
-        return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
+# # 提供者查询己方设备信息
+# def provider_equipment_search(request):
+#     # 检验方法
+#     if request.method == 'GET':
+#         # 检验会话状态
+#         if 'username' in request.session:
+#             user_name = request.session['username']
+#             user = SystemUser.objects.get(username=user_name)
+#             # 检查用户是否具有该权限
+#             if user.has_provider_privileges():
+#                 equipments = Equipment.objects.filter(owner=user)
+#                 ans = []
+#                 for equipment in equipments:
+#                     # 记录该设备的各项信息参数
+#                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}
+#                     ans.append(equipment_info)
+#                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+#             else:
+#                 return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
+#         else:
+#             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+#     else:
+#         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
 
 
 # 提供者修改己方设备信息
@@ -434,7 +434,6 @@ def admin_check_equipment_apply(request, id):
             # 检查用户是否具有该权限
             if user.has_admin_privileges():
                 try:
-                    check_equipment_id = request.POST['id']
                     check_status = request.POST['pass']
                     # 同意
                     if check_status == 'true':
@@ -485,6 +484,7 @@ def equipment_confirm_apply(request):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
 
 # 简单的删除
 def admin_users_delete(request,username):
@@ -541,3 +541,48 @@ def equipment_delete(request, id):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 不同角色对所有设备的查询
+def equipments_search(request, role):
+    # 检验方法
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            username = request.session['username']
+            user = SystemUser.objects.get(username=username)
+            # 管理员查询所有设备
+            if role == 'admin' and user.has_admin_privileges():
+                ans = []
+                for equipment in Equipment.objects.All():
+                    # 记录该设备的各项信息参数
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
+                                      'contact': [equipment.owner.name, equipment.owner.info_lab, equipment.owner.info_address,
+                                                  equipment.owner.info_tel]}
+                    ans.append(equipment_info)
+                return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+            # 提供者查询己方所有设备
+            elif role == 'provider' and user.has_provider_privileges():
+                equipments = Equipment.objects.filter(owner=user)
+                ans = []
+                for equipment in equipments:
+                    # 记录该设备的各项信息参数
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info, 'status':equipment.status}
+                    ans.append(equipment_info)
+                return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+            # 普通用户或提供者查询所有上架设备
+            elif role == 'student' and user.has_student_privileges():
+                ans = []
+                for equipment in Equipment.objects.filter(status='on_shelf'):
+                    # 记录该设备的各项信息参数
+                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
+                                      'contact': [equipment.owner.username, equipment.owner.info_lab, equipment.owner.info_address,
+                                                  equipment.owner.info_tel]}
+                    ans.append(equipment_info)
+                return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permissions'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))

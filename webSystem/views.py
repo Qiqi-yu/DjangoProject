@@ -5,6 +5,8 @@ from django.http import HttpResponse
 import json
 from datetime import datetime
 from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.shortcuts import redirect
 
 
 # Create your views here.
@@ -17,7 +19,6 @@ def logon_request(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         email = request.POST.get('email')
-        # TODO 邮箱认证
 
         # 判断参数名是否为空
         if username == '' or password == '' or email == '':
@@ -28,24 +29,45 @@ def logon_request(request):
         else:
             user = SystemUser()
             # 先将用户类型设置为普通用户
+            user.verif_code = get_random_string(length=32)
             user.role = 'student'
             user.username = username
             user.set_password(password)
             user.save()
+            # 邮件验证
+            verif_link = 'http://localhost:8000/users/verify/%s/%s' % (username, user.verif_code)
             send_mail(
                 '设备租借平台帐号激活', '',
                 'xuexidepang@yandex.com',
                 [email],
                 html_message='''
-                    <p>亲爱的 <strong>''' + username + '''</strong> 同学你好！</p>
-                    <p>哈哈哈哈哈哈！</p>
-                ''',
+                    <p>亲爱的 <strong>%s</strong> 同学你好！</p>
+                    <p>请访问 <a href='%s'>这个链接</a> 完成帐号激活。</p>
+                    <p>如果链接无效，请直接从 URL 访问 → %s</p>
+                ''' % (username, verif_link, verif_link),
                 fail_silently=False,
             )
 
             return HttpResponse(status=200, content=json.dumps({'user': username}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
+
+
+# 验证邮箱
+def user_verify(request, username, code):
+    if request.method == 'GET':
+        try:
+            user = SystemUser.objects.get(username=username)
+            if user.verif_code == code:
+                user.verif_code = ''
+                user.save()
+            else:
+                raise Exception('Invalid verification code')
+        except:
+            return HttpResponse(status=400, content=json.dumps({'error': 'Invalid format or verification code'}))
+        return redirect('http://localhost:8080/')
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
 
 
 # 登录
@@ -66,6 +88,9 @@ def login_request(request):
             try:
                 # 获取用户信息
                 user = SystemUser.objects.get(username=user_name)
+                # 检查是否已经通过验证
+                if user.verif_code != '':
+                    return HttpResponse(status=401, content=json.dumps({'error': 'Please verify e-mail first'}))
                 # 验证密码
                 if user.check_password(password):
                     # 设置Cookie
@@ -637,7 +662,7 @@ def loan_create(request):
                 start_time = datetime.utcfromtimestamp(int(request.POST['start_time']))
                 end_time = datetime.utcfromtimestamp(int(request.POST['end_time']))
                 statement = request.POST['statement']
-                if start_time >= end_time: raise Exception('')
+                if start_time >= end_time: raise Exception('Empty timespan')
             except:
                 return HttpResponse(status=400, content=json.dumps({'error': 'Incorrect format'}))
             try:

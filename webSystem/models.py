@@ -9,6 +9,8 @@ from django.contrib.auth.models import AbstractUser
 
 class SystemUser(AbstractUser):
 
+    verif_code = models.CharField(max_length=32, default='')
+
     # 用户的属性 student, provider, admin
     role = models.CharField(max_length=20, default='student')
     # 用户提交审核申请的状态判断 Normal Examining Reject Pass

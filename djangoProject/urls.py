@@ -20,6 +20,7 @@ from webSystem import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/logon', views.logon_request),
+    path('users/verify/<str:username>/<str:code>', views.user_verify),
     path('users/login',views.login_request),
     path('users/logout',views.logout_request),
     path('users/apply_provider',views.apply_provider),

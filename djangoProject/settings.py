@@ -119,7 +119,7 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'webSystem.SystemUser'
 
-# Comment on production
+# Comment on production; uncomment for debugging
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.com'
 EMAIL_PORT = 465

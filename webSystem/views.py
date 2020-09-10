@@ -224,7 +224,6 @@ def provider_equipment_update(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-
 # 管理查询所有用户
 def admin_users_query(request):
     # 检验方法
@@ -598,6 +597,21 @@ def equipments_search(request, role):
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
 
 
+# 通过id获取某台设备的详细信息
+def equipment_detail(request, id):
+    try:
+        equipment = Equipment.objects.get(id=id)
+    except:
+        return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
+    else:
+        # 获取未来已占用的时间段
+        occs = _equipment_occupancies(equipment, datetime.now())
+        return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': equipment.name, 'info': equipment.info,'status': equipment.status,
+                                      'contact': [equipment.owner.name, equipment.owner.info_lab, equipment.owner.info_address,
+                                                  equipment.owner.info_tel],
+                                      'occupancies': occs}))
+
+
 def loan_create(request):
     if request.method == 'POST':
         # 检验会话状态
@@ -649,6 +663,7 @@ def _appl_json_object(appl):
         'response': appl.response,
     }
 
+
 # 一台设备是否可以在给定时间段租借
 def _equipment_available(equipment, start_time, end_time):
     if equipment.status != 'on_shelf': return False
@@ -658,6 +673,7 @@ def _equipment_available(equipment, start_time, end_time):
     for occ in occs:
         if max(occ[0], start_time) < min(occ[1], end_time): return False
     return True
+
 
 def loan_my(request):
     if request.method == 'GET':

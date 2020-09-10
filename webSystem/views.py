@@ -158,7 +158,7 @@ def provider_equipment_add(request):
                 equipment.save()
                 return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': name, 'info': info}))
             else:
-                return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:

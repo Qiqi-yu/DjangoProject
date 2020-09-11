@@ -171,7 +171,7 @@ def apply_provider(request):
         try:
             # 获取参数
             lab = request.POST['info_lab']
-            address = request.POST['info_tel']
+            address = request.POST['info_address']
             tel = request.POST['info_tel']
             description = request.POST['info_description']
         # 若参数不存在
@@ -592,17 +592,18 @@ def equipments_search(request, role):
             # 管理员查询所有设备
             if role == 'admin' and user.has_admin_privileges():
                 ans = []
-                for equipment in Equipment.objects.All():
-                    # 获取未来已占用的时间段
-                    occs = _equipment_occupancies(equipment, datetime.now())
-                    # 记录该设备的各项信息参数
-                    equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
-                                      'status': equipment.status,
-                                      'contact': [equipment.owner.username, equipment.owner.info_lab,
-                                                  equipment.owner.info_address,
-                                                  equipment.owner.info_tel],
-                                      'occupancies': occs}
-                    ans.append(equipment_info)
+                if Equipment.objects.exists():
+                    for equipment in Equipment.objects.All():
+                        # 获取未来已占用的时间段
+                        occs = _equipment_occupancies(equipment, datetime.now())
+                        # 记录该设备的各项信息参数
+                        equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
+                                          'status': equipment.status,
+                                          'contact': [equipment.owner.username, equipment.owner.info_lab,
+                                                      equipment.owner.info_address,
+                                                      equipment.owner.info_tel],
+                                          'occupancies': occs}
+                        ans.append(equipment_info)
                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
             # 提供者查询己方所有设备
             elif role == 'provider' and user.has_provider_privileges():

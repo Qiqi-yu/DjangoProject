@@ -736,13 +736,33 @@ def loan_my(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
 
 
+def loan_my_equipments(request):
+    if request.method == 'GET':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            if not user.has_provider_privileges():
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
+            # 查找自己所有设备对应的所有申请
+            appls = []
+            for eq in Equipment.objects.filter(owner=user):
+                appls += list(map(_appl_json_object, LoanApplication.objects.filter(equipment=eq)))
+            appls.sort(key=lambda x: (0 if x['status'] == 'pending' else 1, -x['id']))
+            return HttpResponse(status=200, content=json.dumps(appls))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
+
+
 def loan_list(request, eid):
     if request.method == 'GET':
         # 检验会话状态
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
-            if not user.has_student_privileges():
+            if not user.has_provider_privileges():
                 return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             # 查找设备对应的所有申请
             try:

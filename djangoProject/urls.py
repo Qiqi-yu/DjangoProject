@@ -39,6 +39,7 @@ urlpatterns = [
     path('equipment/search/<str:role>', views.equipments_search),
     path('loan/create', views.loan_create),
     path('loan/my', views.loan_my),
+    path('loan/my_equipments', views.loan_my_equipments),
     path('loan/list/<int:eid>', views.loan_list),
     path('loan/<int:id>/review', views.loan_review),
     path('equipment/<int:id>/detail', views.equipment_detail),

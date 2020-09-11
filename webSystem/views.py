@@ -593,7 +593,7 @@ def equipments_search(request, role):
             if role == 'admin' and user.has_admin_privileges():
                 ans = []
                 if Equipment.objects.exists():
-                    for equipment in Equipment.objects.All():
+                    for equipment in Equipment.objects.filter():
                         # 获取未来已占用的时间段
                         occs = _equipment_occupancies(equipment, datetime.now())
                         # 记录该设备的各项信息参数

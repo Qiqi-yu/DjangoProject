@@ -30,12 +30,12 @@ def logon_request(request):
             user = SystemUser()
             # 先将用户类型设置为普通用户
             user.verif_code = get_random_string(length=32)
-            user.role = 'student'
+            user.role = 'student' if SystemUser.objects.exists() else 'admin'
             user.username = username
             user.set_password(password)
             user.save()
             # 邮件验证
-            verif_link = 'http://localhost:8000/users/verify/%s/%s' % (username, user.verif_code)
+            verif_link = 'http://localhost:8080/apis/users/verify/%s/%s' % (username, user.verif_code)
             send_mail(
                 '设备租借平台帐号激活', '',
                 'xuexidepang@yandex.com',
@@ -65,7 +65,7 @@ def user_verify(request, username, code):
                 raise Exception('Invalid verification code')
         except:
             return HttpResponse(status=400, content=json.dumps({'error': 'Invalid format or verification code'}))
-        return redirect('http://localhost:8080/')
+        return redirect('http://localhost:8080/login?verified=' + username)
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET'}))
 

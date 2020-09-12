@@ -863,22 +863,10 @@ def loan_finish(request, id):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
-def logs_add(request):
-    if request.method == 'POST':
-        if 'username' in request.session:
-            user_name = request.session['username']
-            user = SystemUser.objects.get(username=user_name)
-            try:
-                type = request.POST['type']
-                detail = request.POST['detail']
-                SystemLog.objects.create(type=type, operator=user, detail=detail)
-                return HttpResponse(status=200)
-            except KeyError:
-                return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
-        else:
-            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
-    else:
-        return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
+
+
+def logs_add(user, type, detail):
+    SystemLog.objects.create(type=type, operator=user, detail=detail)
 
 
 def logs_search(request):
@@ -941,7 +929,8 @@ def mails_search(request):
             user = SystemUser.objects.get(username=user_name)
             ans = []
             for mail in Mail.objects.filter(receiver=user):
-                ans.append({'sender': mail.sender.username, 'time': mail.send_time.timestamp(), 'detail': mail.detail, 'status': mail.read,
+                ans.append({'sender': mail.sender.username, 'time': mail.send_time.timestamp(), 'detail': mail.detail,
+                            'status': mail.read,
                             'id': mail.pk, 'type': mail.type, 'relatedID': mail.relatedID})
             return HttpResponse(status=200, content=json.dumps(ans))
         else:
@@ -966,7 +955,7 @@ def mail_delete(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
-def mail_confirm(request,id):
+def mail_confirm(request, id):
     if request.method == 'POST':
         if 'username' in request.session:
             try:

@@ -44,8 +44,7 @@ urlpatterns = [
     path('loan/<int:id>/review', views.loan_review),
     path('equipment/<int:id>/detail', views.equipment_detail),
     path('loan/prefinish/<int:id>', views.loan_prefinish),
-    path('loan/finish/<int:id>', views.loan_finish)
-    path('logs/add',views.logs_add),
+    path('loan/finish/<int:id>', views.loan_finish),
     path('logs/search',views.logs_search),
     path('mails/add',views.mails_add),
     path('mails/search',views.mails_search),

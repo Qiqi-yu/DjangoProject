@@ -6,7 +6,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class SystemUser(AbstractUser):
-    verif_code = models.CharField(max_length=32, default='')
+    verif_code = models.CharField(max_length=32, default='', blank=True)
 
     # 用户的属性 student, provider, admin
     role = models.CharField(max_length=20, default='student')
@@ -24,7 +24,7 @@ class SystemUser(AbstractUser):
     info_description = models.TextField(max_length=200, default='')
 
     # 审核被拒绝时的理由
-    info_reject = models.TextField(max_length=200, default='')
+    info_reject = models.TextField(max_length=200, default='', blank=True)
 
     def has_student_privileges(self):
         return self.role in {'student', 'provider'}
@@ -53,7 +53,7 @@ class Equipment(models.Model):
     examining_status = models.CharField(max_length=20, default='Normal')
 
     # 审核被拒绝时的理由
-    info_reject = models.TextField(max_length=200, default='')
+    info_reject = models.TextField(max_length=200, default='', blank=True)
 
 
 class LoanApplication(models.Model):
@@ -68,7 +68,7 @@ class LoanApplication(models.Model):
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(default=timezone.now)
     statement = models.CharField(max_length=1000, default='')
-    response = models.CharField(max_length=1000, default='')
+    response = models.CharField(max_length=1000, default='', blank=True)
 
 
 # 系统日志

@@ -5,10 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 
 
-# 判断用户从is_student到is_provider的状态转换
-
 class SystemUser(AbstractUser):
-
     verif_code = models.CharField(max_length=32, default='')
 
     # 用户的属性 student, provider, admin
@@ -27,7 +24,7 @@ class SystemUser(AbstractUser):
     info_description = models.TextField(max_length=200, default='')
 
     # 审核被拒绝时的理由
-    info_reject=models.TextField(max_length=200,default='')
+    info_reject = models.TextField(max_length=200, default='')
 
     def has_student_privileges(self):
         return self.role in {'student', 'provider'}
@@ -59,8 +56,6 @@ class Equipment(models.Model):
     info_reject = models.TextField(max_length=200, default='')
 
 
-
-
 class LoanApplication(models.Model):
     # ApplicationStatus = (
     #     (0, 'pending'),   # 已发出，等待审核
@@ -74,3 +69,29 @@ class LoanApplication(models.Model):
     end_time = models.DateTimeField(default=timezone.now)
     statement = models.CharField(max_length=1000, default='')
     response = models.CharField(max_length=1000, default='')
+
+
+# 系统日志
+class SystemLog(models.Model):
+    # 类型
+    type = models.CharField(max_length=50, default='')
+    # 发出者
+    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="sender")
+    # 发出时间
+    send_time = models.DateTimeField(default=timezone.now)
+    # 详细信息
+    detail = models.TextField(max_length=1000, default='')
+
+
+# 站内信
+class Mail(models.Model):
+    # 发出者
+    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="sender")
+    # 接受者
+    receiver = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="receiver")
+    # 发出时间
+    send_time = models.DateTimeField(default=timezone.now)
+    # 详细信息
+    detail = models.TextField(max_length=1000, default='')
+    # 读取状态
+    read = models.BooleanField(default=False)

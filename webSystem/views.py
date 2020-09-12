@@ -461,17 +461,25 @@ def admin_check_equipment_apply(request, id):
 
 
 # 用户确认设备审核状态的通知
-def equipment_confirm_apply(request):
+def equipment_confirm_apply(request, id):
     if request.method == 'POST':
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 将examining_status恢复默认状态
-            equipments = Equipment.objects.filter(owner=user, examining_status='pass' or 'reject')
-            for equipment in equipments:
-                equipment.examining_status = 'Normal'
-                equipment.save()
-            return HttpResponse(status=200)
+            try:
+                equipment = Equipment.objects.get(id=id)
+            except:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
+            else:
+                if equipment.owner != user:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
+                elif equipment.examining_status != 'pass' and equipment.examining_status != 'reject':
+                    return HttpResponse(status=400, content=json.dumps({'error': 'not comfirm time'}))
+                else:
+                    equipment.examining_status = 'Normal'
+                    equipment.save()
+                    return HttpResponse(status=200)
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
@@ -677,6 +685,7 @@ def _appl_json_object(appl):
         'equipment': {
             'id': appl.equipment.id,
             'name': appl.equipment.name,
+            'ownername': appl.equipment.owner.username,
         },
         'start_time': datetime.timestamp(appl.start_time),
         'end_time': datetime.timestamp(appl.end_time),

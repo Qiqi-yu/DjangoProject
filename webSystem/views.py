@@ -666,6 +666,10 @@ def _appl_json_object(appl):
     return {
         'id': appl.id,
         'status': appl.status,
+        'owner': {
+            'id': appl.equipment.owner.id,
+            'username': appl.equipment.owner.username,
+        },
         'applicant': {
             'id': appl.applicant.id,
             'username': appl.applicant.username,

@@ -815,6 +815,54 @@ def loan_review(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
+# 租借者归还设备，终止申请
+def loan_prefinish(request, id):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            try:
+                appl = LoanApplication.objects.get(id=id)
+            except:
+                return HttpResponse(status=404, content=json.dumps({'error': 'no such application'}))
+            else:
+                if appl.status != 'approved' or appl.applicant != user:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'cannot return'}))
+                else:
+                    # 更新申请状态
+                    appl.status = 'prefinish'
+                    appl.save()
+                    return HttpResponse(status=200)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+# 提供者确认设备归还
+def loan_finish(request, id):
+    if request.method == 'POST':
+        # 检验会话状态
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            try:
+                appl = LoanApplication.objects.get(id=id)
+            except:
+                return HttpResponse(status=404, content=json.dumps({'error': 'no such application'}))
+            else:
+                if appl.status != 'prefinish' or appl.equipment.owner != user:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'cannot return'}))
+                else:
+                    # 更新申请状态
+                    appl.status = 'finished'
+                    appl.save()
+                    return HttpResponse(status=200)
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 def logs_add(request):
     if request.method == 'POST':
         if 'username' in request.session:

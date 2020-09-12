@@ -61,6 +61,8 @@ class LoanApplication(models.Model):
     #     (0, 'pending'),   # 已发出，等待审核
     #     (1, 'approved'),  # 通过
     #     (2, 'rejected'),  # 拒绝
+    #     (3, 'prefinish'),  # 待完成
+    #     (4, 'finished'),  # 已完成
     # )
     status = models.CharField(max_length=20, default='pending')
     applicant = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="applicant")

@@ -776,13 +776,13 @@ def loan_review(request, id):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
-            if not user.has_provider_privileges():
+            if not user.has_provider_privileges() and not user.has_admin_privileges():
                 return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             try:
                 appl = LoanApplication.objects.get(id=id)
             except LoanApplication.DoesNotExist:
                 return HttpResponse(status=404, content=json.dumps({'error': 'no such application'}))
-            if appl.equipment.owner != user:
+            if appl.equipment.owner != user and not user.has_admin_privileges():
                 return HttpResponse(status=401, content=json.dumps({'error': 'not its owner'}))
             try:
                 accept = int(request.POST['accept'])

@@ -715,13 +715,18 @@ def loan_my_equipments(request):
         if 'username' in request.session:
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
-            if not user.has_provider_privileges():
+            if user.has_admin_privileges():
+                equipments = Equipment.objects.all()
+            elif user.has_provider_privileges():
+                equipments = Equipment.objects.filter(owner=user)
+            else:
                 return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
             # 查找自己所有设备对应的所有申请
             appls = []
-            for eq in Equipment.objects.filter(owner=user):
+            for eq in equipments:
                 appls += list(map(_appl_json_object, LoanApplication.objects.filter(equipment=eq)))
-            appls.sort(key=lambda x: (0 if x['status'] == 'pending' else 1, -x['id']))
+            if not user.has_admin_privileges():
+                appls.sort(key=lambda x: (0 if x['status'] == 'pending' else 1, -x['id']))
             return HttpResponse(status=200, content=json.dumps(appls))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))

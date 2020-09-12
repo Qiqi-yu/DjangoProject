@@ -43,6 +43,6 @@ urlpatterns = [
     path('loan/list/<int:eid>', views.loan_list),
     path('loan/<int:id>/review', views.loan_review),
     path('equipment/<int:id>/detail', views.equipment_detail),
-    path('users/log/add',views.log_add),
-    path('admin/log/search',views.admin_log_search)
+    path('logs/add',views.logs_add),
+    path('logs/search',views.logs_search)
 ]

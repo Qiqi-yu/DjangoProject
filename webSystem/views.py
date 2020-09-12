@@ -815,7 +815,7 @@ def loan_review(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
-def log_add(request):
+def logs_add(request):
     if request.method == 'POST':
         if 'username' in request.session:
             user_name = request.session['username']
@@ -833,7 +833,7 @@ def log_add(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-def admin_log_search(request):
+def logs_search(request):
     if request.method == 'GET':
         if 'username' in request.session:
             user_name = request.session['username']
@@ -853,3 +853,4 @@ def admin_log_search(request):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
+

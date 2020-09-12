@@ -90,7 +90,7 @@ class Mail(models.Model):
     # 接受者
     receiver = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="mail_receiver")
     # 发出时间
-    send_time = models.DateTimeField(default=timezone.now)
+    send_time = models.DateTimeField(auto_now_add=True)
     # 详细信息
     detail = models.TextField(max_length=1000, default='')
     # 读取状态

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from .models import SystemUser, Equipment, LoanApplication
+from .models import SystemUser, Equipment, LoanApplication, SystemLog, Mail
 from django.http import HttpResponse
 import json
 from datetime import datetime
@@ -317,7 +317,7 @@ def users_info(request):
                          'user_type': user.role, 'user_examining': user.examining_status,
                          'user_info_lab': user.info_lab,
                          'user_info_tel': user.info_tel, 'user_info_address': user.info_address,
-                         'user_info_description': user.info_description,'user_info_reject':user.info_reject}
+                         'user_info_description': user.info_description, 'user_info_reject': user.info_reject}
             return HttpResponse(status=200, content=json.dumps(user_data))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -527,7 +527,6 @@ def admin_users_delete(request, username):
                 try:
                     delete_user = SystemUser.objects.get(username=username)
                     delete_user.delete()
-                    # TODO:如果需要保留历史租借申请 需要更改级联删除 通过搜素完成
                     return HttpResponse(status=200)
                 except SystemUser.DoesNotExist:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no such user'}))
@@ -816,3 +815,41 @@ def loan_review(request, id):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
+def log_add(request):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            try:
+                type = request.POST['type']
+                detail = request.POST['detail']
+                SystemLog.objects.create(type=type, operator=user,detail=detail)
+                return HttpResponse(status=200)
+            except KeyError:
+                return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
+
+
+def admin_log_search(request):
+    if request.method == 'GET':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            if user.has_admin_privileges():
+                ans = []
+                if SystemLog.objects.exists():
+                    for log in SystemLog.objects.all():
+                        log_info = {'operator': log.operator.username, 'type': log.type, 'time': log.operate_time.timestamp(),
+                                    'detail': log.detail}
+                        ans.append(log_info)
+                return HttpResponse(status=200,content=json.dumps(ans))
+
+            else:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permissions'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))

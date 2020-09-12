@@ -75,10 +75,10 @@ class LoanApplication(models.Model):
 class SystemLog(models.Model):
     # 类型 Add Delete Change
     type = models.CharField(max_length=50, default='')
-    # 发出者
-    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="log_sender")
+    # 操作者
+    operator = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="log_operator")
     # 发出时间
-    send_time = models.DateTimeField(default=timezone.now)
+    operate_time = models.DateTimeField(auto_now_add=True)
     # 详细信息
     detail = models.TextField(max_length=1000, default='')
 

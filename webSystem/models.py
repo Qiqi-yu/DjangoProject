@@ -97,7 +97,7 @@ class Mail(models.Model):
     detail = models.TextField(max_length=1000, default='')
     # 读取状态
     read = models.BooleanField(default=False)
-    # 类型：Hit EquipmentOnShelf LoanReturn
-    type = models.CharField(max_length=20,default='Hit')
+    # 类型：Hint EquipmentOnShelf LoanReturn
+    type = models.CharField(max_length=20,default='Hint')
     # 设备或租借申请相关的ID
     relatedID=models.SmallIntegerField(default=0)

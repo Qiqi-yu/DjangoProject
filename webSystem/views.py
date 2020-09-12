@@ -367,7 +367,7 @@ def provider_equipment_on_shelf(request, id):
                     elif equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
                     else:
-                        equipment.examining_status = 'examining'
+                        equipment.examining_status = 'Examining'
                         equipment.status = 'wait_on_shelf'
                         equipment.save()
                         logs_add(user, 'Change', '申请上架设备{name}'.format(name=equipment.name))
@@ -566,7 +566,7 @@ def equipments_search(request, role):
                         occs = _equipment_occupancies(equipment, datetime.now())
                         # 记录该设备的各项信息参数
                         equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
-                                          'status': equipment.status,
+                                          'status': equipment.status, 'examining_status': equipment.examining_status,
                                           'contact': [equipment.owner.username, equipment.owner.info_lab,
                                                       equipment.owner.info_address,
                                                       equipment.owner.info_tel],

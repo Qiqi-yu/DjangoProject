@@ -46,5 +46,9 @@ urlpatterns = [
     path('loan/prefinish/<int:id>', views.loan_prefinish),
     path('loan/finish/<int:id>', views.loan_finish)
     path('logs/add',views.logs_add),
-    path('logs/search',views.logs_search)
+    path('logs/search',views.logs_search),
+    path('mails/add',views.mails_add),
+    path('mails/search',views.mails_search),
+    path('mails/<int:id>/delete',views.mail_delete),
+    path('mails/<int:id>/confirm',views.mail_confirm)
 ]

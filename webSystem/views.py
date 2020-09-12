@@ -871,7 +871,7 @@ def logs_add(request):
             try:
                 type = request.POST['type']
                 detail = request.POST['detail']
-                SystemLog.objects.create(type=type, operator=user,detail=detail)
+                SystemLog.objects.create(type=type, operator=user, detail=detail)
                 return HttpResponse(status=200)
             except KeyError:
                 return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
@@ -890,10 +890,11 @@ def logs_search(request):
                 ans = []
                 if SystemLog.objects.exists():
                     for log in SystemLog.objects.all():
-                        log_info = {'operator': log.operator.username, 'type': log.type, 'time': log.operate_time.timestamp(),
+                        log_info = {'operator': log.operator.username, 'type': log.type,
+                                    'time': log.operate_time.timestamp(),
                                     'detail': log.detail}
                         ans.append(log_info)
-                return HttpResponse(status=200,content=json.dumps(ans))
+                return HttpResponse(status=200, content=json.dumps(ans))
 
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no permissions'}))
@@ -902,3 +903,80 @@ def logs_search(request):
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
 
+
+def mails_add(request):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            try:
+                receiver_username = request.POST['receiver']
+                detail = request.POST['detail']
+                type = request.POST['type']
+                try:
+                    receiver = SystemUser.objects.get(username=receiver_username)
+                    if type == 'Hit':
+                        Mail.objects.create(sender=user, receiver=receiver, type=type, detail=detail)
+                    else:
+                        try:
+                            ID = request.POST['relatedID']
+                            Mail.objects.create(sender=user, receiver=receiver, type=type, detail=detail, relatedID=ID)
+                        except KeyError:
+                            return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+                    return HttpResponse(status=200)
+                except SystemUser.DoesNotExist:
+                    return HttpResponse(status=400, content=json.dumps({'error': 'no such a user'}))
+            except KeyError:
+                return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+def mails_search(request):
+    if request.method == 'GET':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            ans = []
+            for mail in Mail.objects.filter(receiver=user):
+                ans.append({'sender': mail.sender.username, 'time': mail.send_time.timestamp(), 'detail': mail.detail, 'status': mail.read,
+                            'id': mail.pk, 'type': mail.type, 'relatedID': mail.relatedID})
+            return HttpResponse(status=200, content=json.dumps(ans))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))
+
+
+def mail_delete(request, id):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            try:
+                mail = Mail.objects.get(pk=id)
+                mail.delete()
+                return HttpResponse(status=200)
+            except Mail.DoesNotExist:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no such mail'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+
+def mail_confirm(request,id):
+    if request.method == 'POST':
+        if 'username' in request.session:
+            try:
+                mail = Mail.objects.get(pk=id)
+                mail.read = True
+                mail.save()
+                return HttpResponse(status=200)
+            except Mail.DoesNotExist:
+                return HttpResponse(status=400, content=json.dumps({'error': 'no such mail'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))

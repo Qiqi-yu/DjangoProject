@@ -229,7 +229,7 @@ def apply_provider(request):
 #         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
 
 
-# 提供者修改己方设备信息
+# 管理员或提供者修改己方设备信息
 def provider_equipment_update(request, id):
     # 检验方法
     if request.method == 'POST':
@@ -238,13 +238,13 @@ def provider_equipment_update(request, id):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 检查用户是否具有该权限
-            if user.has_provider_privileges():
+            if user.has_admin_privileges() or user.has_provider_privileges():
                 try:
                     equipment = Equipment.objects.get(id=id)
                 except:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
                 else:
-                    if equipment.owner != user:
+                    if user.has_provider_privileges() and equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
                     elif equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'already on shelf'}))
@@ -257,7 +257,7 @@ def provider_equipment_update(request, id):
                         return HttpResponse(status=200, content=json.dumps(
                             {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}))
             else:
-                return HttpResponse(status=400, content=json.dumps({'error': 'no provider permission'}))
+                return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
@@ -541,7 +541,7 @@ def admin_users_delete(request, username):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
 
 
-# 提供者删除设备
+# 管理员或提供者删除设备
 def equipment_delete(request, id):
     if request.method == 'POST':
         # 检验会话状态
@@ -549,13 +549,13 @@ def equipment_delete(request, id):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 检查用户是否具有该权限
-            if user.has_provider_privileges():
+            if user.has_admin_privileges() or user.has_provider_privileges():
                 try:
                     delete_equipment = Equipment.objects.get(id=id)
                 except:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no such equipment'}))
                 else:
-                    if delete_equipment.owner != user:
+                    if user.has_provider_privileges() and delete_equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
                     elif delete_equipment.status == 'on_shelf' or delete_equipment.status == 'wait_on_shelf':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot delete'}))

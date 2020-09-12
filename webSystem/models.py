@@ -73,10 +73,10 @@ class LoanApplication(models.Model):
 
 # 系统日志
 class SystemLog(models.Model):
-    # 类型
+    # 类型 Add Delete Change
     type = models.CharField(max_length=50, default='')
     # 发出者
-    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="sender")
+    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="log_sender")
     # 发出时间
     send_time = models.DateTimeField(default=timezone.now)
     # 详细信息
@@ -86,9 +86,9 @@ class SystemLog(models.Model):
 # 站内信
 class Mail(models.Model):
     # 发出者
-    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="sender")
+    sender = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="mail_sender")
     # 接受者
-    receiver = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="receiver")
+    receiver = models.ForeignKey('SystemUser', on_delete=models.CASCADE, related_name="mail_receiver")
     # 发出时间
     send_time = models.DateTimeField(default=timezone.now)
     # 详细信息

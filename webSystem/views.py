@@ -812,3 +812,5 @@ def loan_review(request, id):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+

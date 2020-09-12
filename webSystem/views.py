@@ -49,7 +49,7 @@ def logon_request(request):
                     ''' % (username, verif_link, verif_link),
                     fail_silently=False,
                 )
-
+            logs_add(user, 'Add', '用户注册')
             return HttpResponse(status=200, content=json.dumps({'user': username}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
@@ -121,25 +121,6 @@ def logout_request(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-# 用户查询所有上架的设备信息
-# def equipment_search(request):
-#     # 检验方法
-#     if request.method == 'GET':
-#         # 检验会话状态
-#         if 'username' in request.session:
-#             ans = []
-#             for equipment in Equipment.objects.filter(status='on_shelf'):
-#                 # 记录该设备的各项信息参数
-#                 equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info,
-#                                 'contact': [equipment.owner.info_lab, equipment.owner.info_address, equipment.owner.info_tel]}
-#                 ans.append(equipment_info)
-#             return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
-#         else:
-#             return HttpResponse(status=400,content=json.dumps({'error': 'no valid session'}))
-#     else:
-#         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
-
-
 # 提供者添加设备
 def provider_equipment_add(request):
     # 检验方法
@@ -158,6 +139,7 @@ def provider_equipment_add(request):
                 equipment.status = 'exist'
                 equipment.owner = user
                 equipment.save()
+                logs_add(user, 'Add', '添加设备{name}'.format(name=equipment.name))
                 return HttpResponse(status=200, content=json.dumps({'id': equipment.id, 'name': name, 'info': info}))
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
@@ -195,8 +177,9 @@ def apply_provider(request):
 
                     # 更新用户的审核状态
                     user.examining_status = 'Examining'
-
                     user.save()
+
+                    logs_add(user, 'Change', '申请成为设备提供者')
                     return HttpResponse(status=200)
                 else:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -204,32 +187,7 @@ def apply_provider(request):
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST'}))
 
 
-# # 提供者查询己方设备信息
-# def provider_equipment_search(request):
-#     # 检验方法
-#     if request.method == 'GET':
-#         # 检验会话状态
-#         if 'username' in request.session:
-#             user_name = request.session['username']
-#             user = SystemUser.objects.get(username=user_name)
-#             # 检查用户是否具有该权限
-#             if user.has_provider_privileges():
-#                 equipments = Equipment.objects.filter(owner=user)
-#                 ans = []
-#                 for equipment in equipments:
-#                     # 记录该设备的各项信息参数
-#                     equipment_info = {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}
-#                     ans.append(equipment_info)
-#                 return HttpResponse(status=200, content=json.dumps({'equipments': ans}))
-#             else:
-#                 return HttpResponse(status=400, content=json.dumps({'error': 'permission'}))
-#         else:
-#             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
-#     else:
-#         return HttpResponse(status=400,content=json.dumps({'error': 'require GET'}))
-
-
-# 管理员或提供者修改己方设备信息
+# 提供者修改设备
 def provider_equipment_update(request, id):
     # 检验方法
     if request.method == 'POST':
@@ -254,6 +212,7 @@ def provider_equipment_update(request, id):
                         equipment.name = name if name else equipment.name
                         equipment.info = info if info else equipment.info
                         equipment.save()
+                        logs_add(user, 'Change', '修改设备{name}'.format(name=equipment.name))
                         return HttpResponse(status=200, content=json.dumps(
                             {'id': equipment.id, 'name': equipment.name, 'info': equipment.info}))
             else:
@@ -345,6 +304,7 @@ def admin_check_users_apply(request):
                             apply_user.examining_status = 'Pass'
                             apply_user.role = 'provider'
                             apply_user.save()
+                            logs_add(user, 'Change', '通过{name}成为提供者的申请'.format(name=apply_user.username))
                             return HttpResponse(status=200)
                         except SystemUser.DoesNotExist:
                             return HttpResponse(status=400, content=json.dumps({'error': 'no such applyed user'}))
@@ -357,6 +317,7 @@ def admin_check_users_apply(request):
                             apply_user.examining_status = 'Reject'
                             apply_user.info_reject = check_reason
                             apply_user.save()
+                            logs_add(user, 'Change', '拒绝{name}成为提供者的申请'.format(name=apply_user.username))
                             return HttpResponse(status=200)
                         except KeyError:
                             return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
@@ -409,6 +370,7 @@ def provider_equipment_on_shelf(request, id):
                         equipment.examining_status = 'examining'
                         equipment.status = 'wait_on_shelf'
                         equipment.save()
+                        logs_add(user, 'Change', '申请上架设备{name}'.format(name=equipment.name))
                         return HttpResponse(status=200)
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
@@ -441,6 +403,7 @@ def provider_equipment_undercarriage(request, id):
                     else:
                         equipment.status = 'exist'
                         equipment.save()
+                        logs_add(user, 'Change', '下架设备{name}'.format(name=equipment.name))
                         return HttpResponse(status=200)
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no permission'}))
@@ -470,6 +433,7 @@ def admin_check_equipment_apply(request, id):
                             equipment.examining_status = 'pass'
                             equipment.status = 'on_shelf'
                             equipment.save()
+                            logs_add(user, 'Change', '通过设备{name}上架的申请'.format(name=equipment.name))
                             return HttpResponse(status=200)
                         except Equipment.DoesNotExist:
                             return HttpResponse(status=400, content=json.dumps({'error': 'no such applyed equipment'}))
@@ -482,6 +446,7 @@ def admin_check_equipment_apply(request, id):
                             equipment.examining_status = 'Reject'
                             equipment.info_reject = check_reason
                             equipment.save()
+                            logs_add(user, 'Change', '拒绝设备{name}上架的申请'.format(name=equipment.name))
                             return HttpResponse(status=200)
                         except KeyError:
                             return HttpResponse(status=400, content=json.dumps({'error': 'invalid parameters'}))
@@ -527,6 +492,7 @@ def admin_users_delete(request, username):
                 try:
                     delete_user = SystemUser.objects.get(username=username)
                     delete_user.delete()
+                    logs_add(user, 'Delete', '删除用户{name}'.format(name=username))
                     return HttpResponse(status=200)
                 except SystemUser.DoesNotExist:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no such user'}))
@@ -560,6 +526,7 @@ def equipment_delete(request, id):
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot delete'}))
                     else:
                         delete_equipment.delete()
+                        logs_add(user, 'Delete', '删除设备{name}'.format(name=delete_equipment.name))
                         return HttpResponse(status=200)
             else:
                 return HttpResponse(status=400, content=json.dumps({'error': 'no permissions'}))
@@ -687,6 +654,7 @@ def loan_create(request):
             appl.end_time = end_time
             appl.statement = statement
             appl.save()
+            logs_add(user, 'Add', '申请租借设备{name}'.format(name=equipment.name))
             return HttpResponse(status=200, content=json.dumps({'id': appl.id}))
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -808,6 +776,12 @@ def loan_review(request, id):
             appl.status = 'approved' if accept != 0 else 'rejected'
             appl.response = response
             appl.save()
+            if appl.status == 'approved':
+                logs_add(user, 'Change', '同意用户{username}租借设备{name}的申请'.format(username=appl.applicant.username,
+                                                                              name=appl.equipment.name))
+            else:
+                logs_add(user, 'Change', '拒绝用户{username}租借设备{name}的申请'.format(username=appl.applicant.username,
+                                                                              name=appl.equipment.name))
             return HttpResponse(status=200)
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -833,6 +807,7 @@ def loan_prefinish(request, id):
                     # 更新申请状态
                     appl.status = 'prefinish'
                     appl.save()
+                    logs_add(user, 'Change', '归还设备{name}'.format(name=appl.equipment.name))
                     return HttpResponse(status=200)
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
@@ -858,6 +833,8 @@ def loan_finish(request, id):
                     # 更新申请状态
                     appl.status = 'finished'
                     appl.save()
+                    logs_add(user, 'Change', '确认用户{username}归还设备{name}'.format(username=appl.applicant.username,
+                                                                               name=appl.equipment.name))
                     return HttpResponse(status=200)
         else:
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))

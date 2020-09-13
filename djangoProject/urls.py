@@ -49,5 +49,6 @@ urlpatterns = [
     path('mails/add',views.mails_add),
     path('mails/search',views.mails_search),
     path('mails/<int:id>/delete',views.mail_delete),
-    path('mails/<int:id>/confirm',views.mail_confirm)
+    path('mails/<int:id>/confirm',views.mail_confirm),
+    path('admin/statistics',views.admin_statistics),
 ]

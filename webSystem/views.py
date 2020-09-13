@@ -3,7 +3,7 @@ from django.shortcuts import render
 from .models import SystemUser, Equipment, LoanApplication, SystemLog, Mail
 from django.http import HttpResponse
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.shortcuts import redirect
@@ -969,3 +969,48 @@ def mail_confirm(request, id):
             return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
     else:
         return HttpResponse(status=400, content=json.dumps({'error': 'require POST method'}))
+
+def admin_statistics(request):
+    if request.method == 'GET':
+        if 'username' in request.session:
+            user_name = request.session['username']
+            user = SystemUser.objects.get(username=user_name)
+            if user.has_admin_privileges():
+                user_count = SystemUser.objects.all().count()
+                provider_count = SystemUser.objects.filter(role='provider').count()
+                devices_count = Equipment.objects.all().count()
+                on_shelf_count = Equipment.objects.filter(status='on_shelf').count()
+                wait_on_shelf_count = Equipment.objects.filter(status='wait_on_shelf').count()
+                appls_count = LoanApplication.objects.all().count()
+                appls_approved_count = (
+                    LoanApplication.objects.filter(status='approved') |
+                    LoanApplication.objects.filter(status='prefinish') |
+                    LoanApplication.objects.filter(status='finished')
+                ).count()
+                appls_pending_count = LoanApplication.objects.filter(status='pending').count()
+                last_week_appls_count = LoanApplication.objects.filter(
+                    end_time__gte=datetime.now() - timedelta(days=7),
+                    end_time__lt=datetime.now()
+                ).count()
+                next_week_appls_count = LoanApplication.objects.filter(
+                    start_time__gte=datetime.now(),
+                    start_time__lt=datetime.now() + timedelta(days=7)
+                ).count()
+                return HttpResponse(status=200, content=json.dumps({
+                    'user_count': user_count,
+                    'provider_count': provider_count,
+                    'devices_count': devices_count,
+                    'on_shelf_count': on_shelf_count,
+                    'wait_on_shelf_count': wait_on_shelf_count,
+                    'appls_count': appls_count,
+                    'appls_approved_count': appls_approved_count,
+                    'appls_pending_count': appls_pending_count,
+                    'last_week_appls_count': last_week_appls_count,
+                    'next_week_appls_count': next_week_appls_count,
+                }))
+            else:
+                return HttpResponse(status=401, content=json.dumps({'error': 'no permission'}))
+        else:
+            return HttpResponse(status=400, content=json.dumps({'error': 'no valid session'}))
+    else:
+        return HttpResponse(status=400, content=json.dumps({'error': 'require GET method'}))

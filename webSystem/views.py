@@ -202,9 +202,9 @@ def provider_equipment_update(request, id):
                 except:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
                 else:
-                    if user.has_provider_privileges() and equipment.owner != user:
+                    if not user.has_admin_privileges() and equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
-                    elif equipment.status != 'exist':
+                    elif not user.has_admin_privileges() and equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'already on shelf'}))
                     else:
                         name = request.POST.get('name')
@@ -356,13 +356,13 @@ def provider_equipment_on_shelf(request, id):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 检查用户是否具有该权限
-            if user.has_provider_privileges():
+            if user.has_admin_privileges() or user.has_provider_privileges():
                 try:
                     equipment = Equipment.objects.get(id=id)
                 except:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
                 else:
-                    if equipment.owner != user:
+                    if not user.has_admin_privileges() and equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
                     elif equipment.status != 'exist':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
@@ -390,13 +390,13 @@ def provider_equipment_undercarriage(request, id):
             user_name = request.session['username']
             user = SystemUser.objects.get(username=user_name)
             # 检查用户是否具有该权限
-            if user.has_provider_privileges():
+            if user.has_admin_privileges() or user.has_provider_privileges():
                 try:
                     equipment = Equipment.objects.get(id=id)
                 except:
                     return HttpResponse(status=400, content=json.dumps({'error': 'no equipment'}))
                 else:
-                    if equipment.owner != user:
+                    if not user.has_admin_privileges() and equipment.owner != user:
                         return HttpResponse(status=400, content=json.dumps({'error': 'not its owner'}))
                     elif equipment.status != 'on_shelf':
                         return HttpResponse(status=400, content=json.dumps({'error': 'cannot apply'}))
@@ -444,6 +444,7 @@ def admin_check_equipment_apply(request, id):
                             equipment = Equipment.objects.get(id=id)
                             # 将e_s改为拒绝 便于通知
                             equipment.examining_status = 'Reject'
+                            equipment.status = 'exist'
                             equipment.info_reject = check_reason
                             equipment.save()
                             logs_add(user, 'Change', '拒绝设备{name}上架的申请'.format(name=equipment.name))

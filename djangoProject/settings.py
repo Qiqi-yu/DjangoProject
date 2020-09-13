@@ -1,7 +1,7 @@
 # Project-specific settings
 
-VERIFY_EMAIL = True
-SEND_REAL_EMAIL = True
+VERIFY_EMAIL = False
+SEND_REAL_EMAIL = False
 FRONTEND_ROOT = 'http://localhost:8080'
 
 if not SEND_REAL_EMAIL:

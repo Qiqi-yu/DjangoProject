@@ -903,7 +903,7 @@ def mails_add(request):
                 type = request.POST['type']
                 try:
                     receiver = SystemUser.objects.get(username=receiver_username)
-                    if type == 'Hit':
+                    if type == 'Hint':
                         Mail.objects.create(sender=user, receiver=receiver, type=type, detail=detail)
                     else:
                         try:
